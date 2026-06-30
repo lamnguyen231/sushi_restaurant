@@ -1,0 +1,669 @@
+Giải thích dự án - Hệ thống nhà hàng Sushi Restaurant
+
+Dự án này là một hệ thống đặt món cho nhà hàng sushi, được xây dựng bằng Flutter và Firebase. Hệ thống có hai phần chính: một website công khai cho khách hàng bên ngoài nhà hàng và một ứng dụng đặt món tại nhà hàng trên thiết bị điện thoại/tablet do nhà hàng cung cấp.
+
+Mục tiêu của dự án là tạo ra một hệ thống nhà hàng thực tế, trong đó khách hàng có thể xem menu, đặt món online, đặt bàn trước, còn khách đang ngồi tại nhà hàng có thể dùng thiết bị của nhà hàng để gọi món trực tiếp tại bàn. Dự án sẽ sử dụng Clean Architecture kết hợp MVVM ở tầng giao diện, Riverpod, Riverpod Generator, SQLite/sqflite, Firebase Authentication, Firebase Firestore và Firebase Cloud Messaging.
+
+Tổng quan hệ thống
+
+1. Website công khai cho khách hàng
+Đây là phần website dành cho khách hàng bên ngoài nhà hàng. Khách hàng có thể truy cập website để xem menu, xem thông tin món ăn, đặt món giao hàng hoặc mang về, và đặt bàn trước.
+
+2. Ứng dụng đặt món tại nhà hàng
+Đây là phần ứng dụng Flutter chạy trên điện thoại hoặc tablet do nhà hàng cung cấp. Khi khách đến nhà hàng, nhân viên phục vụ sẽ mở ứng dụng, chọn bàn từ danh sách bàn trong hệ thống, bắt đầu một phiên dùng bữa và đưa thiết bị cho khách. Khách hàng dùng thiết bị đó để xem menu, thêm món vào giỏ hàng và gửi đơn hàng đến bếp.
+
+3. Backend dùng chung
+Cả website và ứng dụng đặt món tại nhà hàng sẽ dùng chung Firebase backend. Firebase sẽ lưu menu, đơn hàng, bàn, phiên dùng bữa, lịch đặt bàn và thông tin người dùng. Điều này giúp dữ liệu của nhà hàng được quản lý tập trung và dễ đồng bộ.
+
+Phần 1 - Website công khai
+
+Website công khai là nơi khách hàng có thể tương tác với nhà hàng trước khi đến hoặc khi muốn đặt món từ xa.
+
+Chức năng chính của website:
+
+1. Xem menu
+Khách hàng có thể xem danh sách món sushi, danh mục món ăn, giá tiền, mô tả và hình ảnh của từng món.
+
+2. Xem chi tiết món ăn
+Khách hàng có thể chọn một món để xem thông tin chi tiết như mô tả, giá, danh mục, tình trạng còn hàng và hình ảnh.
+
+3. Đặt món online
+Khách hàng có thể thêm món vào giỏ hàng và đặt món để giao hàng hoặc mang về. Đơn hàng online sẽ được lưu vào Firebase Firestore.
+
+4. Đặt bàn trước
+Khách hàng có thể đặt bàn trước bằng cách nhập tên, số điện thoại, ngày, giờ và số lượng khách. Thông tin đặt bàn sẽ được lưu vào Firestore để nhân viên nhà hàng quản lý.
+
+5. Thông báo đơn hàng
+Khi khách hàng đặt món online, hệ thống sẽ tạo đơn hàng mới trong Firestore. Màn hình bếp theo dõi Firestore theo thời gian thực, còn Firebase Cloud Messaging được dùng để phát cảnh báo khi có đơn mới.
+
+Phần 2 - Ứng dụng đặt món tại nhà hàng
+
+Ứng dụng đặt món tại nhà hàng được dùng trên thiết bị do nhà hàng cung cấp, ví dụ điện thoại hoặc tablet đặt tại bàn. Dự án không sử dụng QR code cho luồng này. Thay vào đó, nhân viên phục vụ sẽ chọn bàn trực tiếp trong ứng dụng.
+
+Luồng hoạt động tại nhà hàng:
+
+1. Nhân viên đăng nhập vào ứng dụng.
+2. Ứng dụng hiển thị danh sách bàn lấy từ Firebase Firestore.
+3. Nhân viên chọn một bàn đang trống hoặc đã được xếp cho khách.
+4. Hệ thống tạo một phiên dùng bữa mới cho bàn đó.
+5. Ứng dụng chuyển sang Customer Mode.
+6. Nhân viên đưa thiết bị cho khách hàng.
+7. Khách hàng xem menu trên thiết bị.
+8. Khách hàng thêm món vào giỏ hàng.
+9. Giỏ hàng được lưu cục bộ bằng SQLite/sqflite trên thiết bị.
+10. Khi khách xác nhận đặt món, đơn hàng được gửi lên Firebase Firestore.
+11. Màn hình bếp nhận đơn mới bằng Firestore realtime listener; FCM chỉ dùng để phát cảnh báo.
+12. Khách hàng có thể tiếp tục gọi thêm món trong cùng một phiên dùng bữa.
+13. Khi khách dùng bữa xong, nhân viên xác thực lại để quay về Staff Mode và kết thúc phiên dùng bữa.
+14. Ứng dụng chỉ xóa dữ liệu cục bộ sau khi mọi đơn đã đồng bộ và phiên đã đóng thành công trên Firestore.
+
+Lý do không dùng QR code
+
+Ban đầu dự án có ý tưởng sử dụng QR code để khách quét và đặt món trên điện thoại cá nhân. Tuy nhiên, cách này có thể gây nhầm lẫn nếu nhiều người cùng một bàn đặt món từ nhiều điện thoại khác nhau. Vì vậy, dự án chuyển sang hướng dùng thiết bị do nhà hàng cung cấp cho mỗi bàn hoặc mỗi phiên khách.
+
+Cách này có các lợi ích:
+
+- Giảm việc nhiều người cùng sửa một giỏ hàng và gây nhầm lẫn.
+- Nhà hàng kiểm soát thiết bị và phiên đặt món tốt hơn.
+- SQLite/sqflite có vai trò rõ ràng trong việc lưu giỏ hàng và phiên hiện tại trên thiết bị.
+- Phù hợp hơn với yêu cầu môn học cần sử dụng local database.
+
+Staff Mode và Customer Mode
+
+Thiết bị tại bàn không nên để khách hàng sử dụng toàn bộ quyền của tài khoản nhân viên. Nếu nhân viên đăng nhập, chọn bàn rồi đưa thiết bị cho khách mà không khóa chế độ nhân viên, khách có thể quay lại màn hình chọn bàn, xem đơn khác hoặc thao tác chức năng quản trị.
+
+Ứng dụng tại nhà hàng cần có hai chế độ giao diện:
+
+Staff Mode:
+- Đăng nhập nhân viên.
+- Chọn bàn.
+- Mở phiên dùng bữa.
+- Kết thúc phiên dùng bữa.
+- Quản lý thiết bị.
+
+Customer Mode:
+- Xem menu.
+- Thêm món vào giỏ hàng.
+- Gửi đơn xuống bếp.
+- Xem trạng thái món.
+- Gọi nhân viên.
+- Yêu cầu thanh toán.
+
+Sau khi nhân viên mở phiên dùng bữa, ứng dụng sẽ chuyển sang Customer Mode. Các màn hình quản trị sẽ bị khóa. Nếu muốn quay lại Staff Mode, nhân viên cần xác thực lại bằng PIN hoặc đăng nhập lại.
+
+Ví dụ:
+
+Nhấn giữ góc màn hình 3 giây
+-> Nhập PIN nhân viên
+-> Quay lại Staff Mode
+
+Vai trò của SQLite/sqflite
+
+SQLite/sqflite sẽ được sử dụng chủ yếu trong ứng dụng đặt món tại nhà hàng. Đây là nơi dữ liệu cục bộ được lưu trên thiết bị của nhà hàng.
+
+SQLite sẽ lưu:
+
+1. Giỏ hàng hiện tại
+Khi khách thêm món, dữ liệu giỏ hàng được lưu vào SQLite. Nếu ứng dụng bị đóng, thiết bị tắt màn hình hoặc mạng bị lỗi, giỏ hàng vẫn còn trên thiết bị.
+
+2. Phiên dùng bữa hiện tại
+Ứng dụng lưu thông tin phiên hiện tại như mã phiên, mã bàn, tên bàn, trạng thái phiên và thời gian bắt đầu.
+
+3. Đơn hàng chờ đồng bộ
+Nếu khách bấm đặt món nhưng mạng bị lỗi, đơn hàng có thể được lưu vào SQLite với trạng thái chưa đồng bộ. Khi có mạng lại, ứng dụng sẽ đồng bộ đơn hàng lên Firestore.
+
+4. Menu cache
+Ứng dụng có thể lưu danh sách món ăn đã tải từ Firestore vào SQLite để hiển thị nhanh hơn và có thể xem được menu gần nhất khi mạng chậm.
+
+Cấu trúc SQLite đề xuất
+
+local_dining_session:
+- id TEXT PRIMARY KEY
+- table_id TEXT NOT NULL
+- table_name TEXT
+- status TEXT NOT NULL
+- started_at INTEGER NOT NULL
+- ended_at INTEGER
+- sync_status TEXT NOT NULL
+- updated_at INTEGER NOT NULL
+
+sync_status có thể là:
+- local_only
+- syncing
+- synced
+- failed
+
+local_cart_items:
+- id INTEGER PRIMARY KEY AUTOINCREMENT
+- session_id TEXT NOT NULL
+- product_id TEXT NOT NULL
+- name TEXT NOT NULL
+- unit_price REAL NOT NULL
+- quantity INTEGER NOT NULL
+- note TEXT
+- line_total REAL NOT NULL
+- created_at INTEGER NOT NULL
+- updated_at INTEGER NOT NULL
+
+Nên có unique constraint:
+
+UNIQUE(session_id, product_id, note)
+
+Nếu cùng một món nhưng ghi chú khác nhau thì phải là hai dòng riêng.
+
+pending_orders:
+- local_id TEXT PRIMARY KEY
+- remote_order_id TEXT
+- idempotency_key TEXT UNIQUE
+- session_id TEXT NOT NULL
+- table_id TEXT NOT NULL
+- status TEXT NOT NULL
+- retry_count INTEGER DEFAULT 0
+- last_error TEXT
+- created_at INTEGER NOT NULL
+- updated_at INTEGER NOT NULL
+- synced_at INTEGER
+
+idempotency_key rất quan trọng để tránh gửi trùng đơn khi mạng chập chờn.
+
+Ví dụ:
+- Ứng dụng gửi đơn.
+- Firestore đã nhận.
+- Phản hồi về thiết bị bị mất.
+- Ứng dụng tưởng thất bại và gửi lại.
+
+Nếu không có idempotency_key, bếp có thể nhận hai đơn giống nhau.
+
+pending_order_items:
+- id INTEGER PRIMARY KEY AUTOINCREMENT
+- order_id TEXT NOT NULL
+- product_id TEXT NOT NULL
+- name TEXT NOT NULL
+- unit_price REAL NOT NULL
+- quantity INTEGER NOT NULL
+- note TEXT
+- line_total REAL NOT NULL
+
+cached_products:
+- id TEXT PRIMARY KEY
+- name TEXT NOT NULL
+- description TEXT
+- price REAL NOT NULL
+- category_id TEXT
+- image_url TEXT
+- is_available INTEGER NOT NULL
+- version INTEGER
+- cached_at INTEGER NOT NULL
+- updated_at INTEGER
+
+Vai trò của Firebase
+
+1. Firebase Authentication
+Firebase Authentication được dùng để đăng nhập cho nhân viên, bếp, quản lý hoặc khách hàng online nếu cần. Trong phần ứng dụng tại nhà hàng, khách không nhất thiết cần tài khoản riêng vì thiết bị thuộc về nhà hàng.
+
+2. Firebase Firestore
+Firestore là cơ sở dữ liệu cloud chính của hệ thống. Firestore sẽ lưu menu, đơn hàng, bàn, phiên dùng bữa, lịch đặt bàn, thiết bị và thông tin người dùng.
+
+3. Firebase Cloud Messaging
+Firebase Cloud Messaging được dùng để gửi cảnh báo khi có đơn mới hoặc khi trạng thái đơn thay đổi. FCM không phải nguồn dữ liệu chính. Màn hình bếp phải theo dõi Firestore theo thời gian thực để nhận đơn hàng.
+
+Firestore là nguồn dữ liệu chính, FCM chỉ là thông báo
+
+Firebase Cloud Messaging không nên là cơ chế duy nhất để bếp nhận đơn. FCM chỉ nên là tín hiệu thông báo rằng có thay đổi mới.
+
+Thiết kế đúng:
+
+Firestore = nguồn dữ liệu chính
+FCM = tín hiệu cảnh báo
+
+Màn hình bếp nên lắng nghe Firestore theo thời gian thực:
+
+orders
+- status in [pending, accepted, preparing]
+- orderBy createdAt
+
+Khi FCM bị trễ hoặc không đến, đơn vẫn xuất hiện trên màn hình bếp nhờ Firestore realtime listener.
+
+Cấu trúc Firestore đề xuất
+
+products/{productId}
+categories/{categoryId}
+tables/{tableId}
+dining_sessions/{sessionId}
+orders/{orderId}
+reservations/{reservationId}
+users/{userId}
+devices/{deviceId}
+
+products/{productId}:
+- name
+- description
+- price
+- categoryId
+- imageUrl
+- isAvailable
+- preparationArea
+- createdAt
+- updatedAt
+
+preparationArea có thể là:
+- sushi_bar
+- hot_kitchen
+- drinks
+
+categories/{categoryId}:
+- name
+- displayOrder
+- isActive
+
+tables/{tableId}:
+- name
+- capacity
+- status
+- activeSessionId
+- deviceId
+- updatedAt
+
+Trạng thái bàn:
+- available
+- reserved
+- occupied
+- cleaning
+- disabled
+
+dining_sessions/{sessionId}:
+- tableId
+- tableName
+- status
+- guestCount
+- openedBy
+- startedAt
+- endedAt
+- paymentStatus
+- subtotal
+- discount
+- serviceCharge
+- tax
+- grandTotal
+
+orders/{orderId}:
+- source
+- orderType
+- sessionId
+- tableId
+- tableName
+- customer
+- items
+- subtotal
+- deliveryFee
+- discount
+- grandTotal
+- status
+- createdAt
+- updatedAt
+- createdBy
+- idempotencyKey
+
+reservations/{reservationId}:
+- customerName
+- phone
+- reservationDateTime
+- guestCount
+- status
+- note
+- assignedTableId
+- createdAt
+
+Trạng thái đặt bàn:
+- pending
+- confirmed
+- arrived
+- seated
+- completed
+- cancelled
+- no_show
+
+devices/{deviceId}:
+- deviceName
+- assignedTableId
+- status
+- lastOnlineAt
+- appVersion
+
+Collection devices giúp quản lý thiết bị nhà hàng và tránh một thiết bị mở nhiều bàn cùng lúc.
+
+Đồng bộ trạng thái bàn và phiên dùng bữa bằng transaction
+
+Hệ thống có hai nơi liên quan đến trạng thái bàn:
+
+tables/{tableId}
+- status
+- activeSessionId
+
+dining_sessions/{sessionId}
+- tableId
+- status
+
+Nếu cập nhật một nơi thành công nhưng nơi còn lại thất bại, dữ liệu có thể bị lệch. Ví dụ bàn có status occupied nhưng dining session đã closed.
+
+Vì vậy, khi mở hoặc đóng phiên dùng bữa, hệ thống nên dùng Firestore Transaction hoặc WriteBatch để cập nhật đồng thời.
+
+Khi bắt đầu phiên:
+- table.status = occupied
+- table.activeSessionId = sessionId
+- session.status = active
+
+Khi kết thúc phiên:
+- table.status = available
+- table.activeSessionId = null
+- session.status = closed
+- session.endedAt = serverTimestamp
+
+Ngăn hai nhân viên mở hai phiên cho cùng một bàn
+
+Nếu hai thiết bị cùng tải thấy bàn A1 đang trống, cả hai có thể cùng bấm mở phiên và tạo hai dining_sessions cho cùng một bàn. Đây là lỗi concurrency quan trọng.
+
+Không nên làm theo cách đọc status rồi mới tạo phiên riêng lẻ:
+
+if table.status == available -> createSession
+
+Thay vào đó, phải dùng Firestore Transaction:
+
+1. Đọc document bàn trong transaction.
+2. Kiểm tra status == available.
+3. Tạo dining session mới.
+4. Cập nhật bàn thành occupied.
+5. Commit tất cả thay đổi cùng lúc.
+
+Nếu trong lúc đó bàn đã bị nhân viên khác mở phiên, transaction sẽ thất bại và ứng dụng hiển thị thông báo cho nhân viên.
+
+Order và DiningSession
+
+Một phiên dùng bữa có thể có nhiều lần gọi thêm món.
+
+Ví dụ:
+
+DiningSession S01
+- Order O01: sushi
+- Order O02: nước uống
+- Order O03: gọi thêm sashimi
+
+Do đó:
+- Order là một lần gửi yêu cầu xuống bếp.
+- DiningSession là toàn bộ lượt dùng bữa của bàn.
+- Tổng hóa đơn của bàn là tổng các order hợp lệ thuộc session.
+
+Khi kết thúc phiên, không được chỉ nhìn vào giỏ hàng hiện tại. Hệ thống phải tính tổng từ các đơn đã gửi trong session.
+
+Cấu trúc items trong order
+
+Với MVP, mỗi order có thể lưu items trực tiếp trong document:
+
+orders/{orderId}
+- items: [productId, productName, unitPrice, quantity, note, lineTotal]
+
+Cách này đơn giản và phù hợp nếu mỗi đơn chỉ có vài chục món.
+
+Nếu hệ thống cần mở rộng sau này, có thể tách thành subcollection:
+
+orders/{orderId}/items/{itemId}
+
+Cách mở rộng này hữu ích nếu cần:
+- Trạng thái riêng từng món.
+- Hủy một món.
+- Chia khu bếp sushi, bếp nóng, đồ uống.
+- Theo dõi món nào đã phục vụ.
+
+Trong đồ án MVP, sẽ dùng mảng items trong order document và ghi rõ đây là lựa chọn đơn giản cho MVP.
+
+Giá món phải được snapshot vào đơn hàng
+
+Không nên chỉ lưu productId rồi khi hiển thị hóa đơn mới lấy giá hiện tại từ products, vì giá món có thể thay đổi sau khi khách đặt.
+
+Mỗi OrderItem nên lưu:
+- productId
+- productName
+- unitPrice
+- quantity
+- note
+- lineTotal
+
+Ví dụ:
+- unitPrice = 89000
+- quantity = 2
+- lineTotal = 178000
+
+Tên và giá tại thời điểm đặt món phải được giữ nguyên trong đơn hàng.
+
+Không nên tin total do client gửi lên
+
+Ứng dụng khách hoặc website có thể gửi total sai. Trong hệ thống thực tế, tổng tiền nên được tính lại ở backend bằng Cloud Functions hoặc trusted server.
+
+Trong MVP nếu chưa dùng Cloud Functions, hệ thống vẫn cần:
+- Lưu unitPrice và lineTotal trong từng item.
+- Tính lại tổng tiền trong repository/service trước khi lưu.
+- Dùng Firestore Security Rules để hạn chế quyền ghi.
+- Ghi rõ đây là giới hạn của MVP.
+
+Điểm này đặc biệt quan trọng với website công khai vì code chạy trên trình duyệt người dùng.
+
+Vòng đời trạng thái đơn hàng
+
+Dự án cần định nghĩa rõ state machine cho order thay vì chỉ dùng status chung chung.
+
+Đơn tại bàn:
+- pending
+- accepted
+- preparing
+- ready
+- served
+- completed
+
+Nhánh phụ:
+- pending -> rejected
+- pending/accepted -> cancelled
+
+Đơn giao hàng hoặc mang về:
+- pending
+- confirmed
+- preparing
+- ready
+- delivering
+- completed
+
+Không phải trạng thái nào cũng áp dụng cho mọi loại đơn. Trong code nên dùng enum hoặc sealed class thay vì string rời rạc nếu có thể.
+
+Kết thúc phiên không xóa local data ngay lập tức
+
+Trình tự kết thúc phiên cần an toàn hơn. Không nên vừa bấm kết thúc phiên là xóa ngay giỏ hàng và dữ liệu local.
+
+Trình tự đúng:
+
+1. Kiểm tra pending_orders.
+2. Đồng bộ toàn bộ đơn chưa đồng bộ.
+3. Xác nhận kết thúc phiên trên Firestore.
+4. Firestore trả về thành công.
+5. Mới xóa dữ liệu local trong SQLite.
+
+Nếu còn đơn chưa đồng bộ, ứng dụng phải chặn đóng phiên hoặc yêu cầu nhân viên xử lý.
+
+Firebase Security Rules và phân quyền
+
+Dự án cần có các role:
+
+- customer
+- staff
+- kitchen
+- manager
+
+Quyền đề xuất:
+
+customer:
+- Xem menu.
+- Tạo đơn online.
+- Tạo reservation.
+
+staff:
+- Mở/đóng dining session.
+- Tạo đơn tại bàn.
+- Gắn thiết bị với bàn.
+
+kitchen:
+- Xem đơn cần xử lý.
+- Cập nhật trạng thái chuẩn bị món.
+
+manager:
+- Quản lý menu.
+- Quản lý bàn.
+- Quản lý người dùng.
+- Xem báo cáo.
+
+Không được chỉ ẩn nút trên giao diện. Firestore Security Rules phải kiểm tra role từ user document hoặc custom claims.
+
+Website công khai không nên được phép:
+- Sửa giá sản phẩm.
+- Tự cập nhật đơn thành completed.
+- Đọc toàn bộ đơn hàng.
+- Đọc reservation của người khác.
+- Mở hoặc đóng dining session.
+
+Kiến trúc code
+
+Cấu trúc domain/data/presentation không phải MVVM thuần túy mà gần với Clean Architecture theo layer. Cách mô tả chính xác hơn là:
+
+Dự án sử dụng Clean Architecture theo layer, kết hợp MVVM ở presentation layer và Riverpod để quản lý state/dependency injection.
+
+Nên tổ chức code theo feature-first để dễ chia việc và dễ tìm file:
+
+lib/
+  core/
+  features/
+    authentication/
+      data/
+      domain/
+      presentation/
+    products/
+      data/
+      domain/
+      presentation/
+    dining_session/
+      data/
+      domain/
+      presentation/
+    cart/
+      data/
+      domain/
+      presentation/
+    orders/
+      data/
+      domain/
+      presentation/
+    reservations/
+      data/
+      domain/
+      presentation/
+    kitchen/
+      data/
+      domain/
+      presentation/
+
+Riverpod và Riverpod Generator
+
+Riverpod sẽ được dùng để quản lý trạng thái và dependency injection. Riverpod Generator sẽ giúp sinh provider từ annotation, làm code gọn hơn và giảm lặp lại.
+
+Một số provider quan trọng:
+
+- authStateProvider
+- currentUserProvider
+- productRepositoryProvider
+- productListProvider
+- productDetailProvider
+- localDatabaseProvider
+- cartRepositoryProvider
+- cartProvider
+- tableRepositoryProvider
+- availableTablesProvider
+- selectedTableProvider
+- diningSessionRepositoryProvider
+- activeDiningSessionProvider
+- orderRepositoryProvider
+- sessionOrdersProvider
+- kitchenOrdersProvider
+- reservationRepositoryProvider
+- reservationListProvider
+- connectivityProvider
+- pendingOrderSyncProvider
+
+ViewModel/Notifier không nên gọi trực tiếp Firebase hoặc SQLite. Luồng đúng là:
+
+View
+-> ViewModel/Notifier
+-> Repository
+-> Local/Remote Data Source
+
+Lưu ý cho Flutter Web
+
+Nếu website được xây bằng Flutter Web, cần lưu ý:
+
+- SEO của Flutter Web không tốt bằng các framework web truyền thống.
+- Thời gian tải ban đầu có thể lớn hơn.
+- Firebase Auth persistence và routing trên web cần xử lý riêng.
+- Giao diện cần responsive cho desktop và mobile.
+- Không dùng sqflite trực tiếp trên web.
+
+SQLite/sqflite chỉ nên thuộc về ứng dụng mobile/tablet tại nhà hàng. Website nên dùng memory state, LocalStorage, IndexedDB hoặc implementation local khác phù hợp web.
+
+Nếu cùng một Flutter codebase chạy web và mobile, repository local cần có implementation khác nhau theo platform:
+
+CartRepository
+- SqfliteCartRepository cho Android/iOS
+- WebLocalStorageCartRepository cho Web
+
+MVP đề xuất theo giai đoạn
+
+Phạm vi hiện tại khá lớn, nên chia thành các giai đoạn để giảm rủi ro.
+
+Giai đoạn 1 - Core dine-in:
+- Nhân viên đăng nhập.
+- Chọn bàn.
+- Mở phiên dùng bữa.
+- Xem menu.
+- Thêm giỏ hàng local bằng SQLite.
+- Gửi đơn lên Firestore.
+- Bếp xem đơn realtime từ Firestore.
+- Bếp cập nhật trạng thái.
+- Đóng phiên an toàn.
+
+Giai đoạn 2 - Website:
+- Xem menu.
+- Giỏ hàng web.
+- Đặt pickup.
+- Đặt bàn trước.
+
+Nên làm pickup trước delivery vì delivery cần thêm địa chỉ, phí giao hàng và vùng phục vụ.
+
+Giai đoạn 3 - Nâng cao:
+- Offline pending orders.
+- Firebase Cloud Messaging.
+- Delivery.
+- Quản lý thiết bị.
+- Báo cáo doanh thu.
+- Thanh toán.
+
+Nếu offline sync là yêu cầu bắt buộc của môn học, pending_orders sẽ được đưa vào giai đoạn 1 với luồng đơn giản và có kiểm soát.
+
+Chức năng có thể bổ sung sau
+
+- Số lượng khách của phiên.
+- Ghi chú cho từng món.
+- Gọi nhân viên.
+- Yêu cầu thanh toán.
+- Hủy món trước khi bếp xác nhận.
+- Món hết hàng theo thời gian thực.
+- Khóa bàn đang được sử dụng.
+- Lịch sử đơn trong phiên.
+- Xác nhận trước khi kết thúc phiên.
+- Phục hồi phiên khi ứng dụng bị tắt.
+- Phát hiện thiết bị mất mạng.
+- Chống gửi trùng đơn.
+- Theo dõi ai mở và đóng phiên.
