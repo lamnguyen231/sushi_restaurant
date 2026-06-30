@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "473749044255",
+    "project_id": "sushisishu-d4673",
+    "storage_bucket": "sushisishu-d4673.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473749044255:android:1bc1ec4022b23bef5f692a",
+        "android_client_info": {
+          "package_name": "com.example.sushi_restaurant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADtXjV1qiAF2LLGlOU6ck3jGRRexe1JFw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
