@@ -17,10 +17,42 @@ firebase_config.example.json
 
 ## Run commands
 
-Run the app with:
+In Android Studio, choose the `main.dart` run configuration and press the normal
+Run button. That configuration passes:
+
+```text
+--dart-define-from-file=firebase_config.local.json
+```
+
+Run the app from terminal with:
 
 ```bash
 flutter run -d chrome --dart-define-from-file=firebase_config.local.json
+```
+
+Do not run Firebase features with only:
+
+```bash
+flutter run -d chrome
+```
+
+That command does not load `firebase_config.local.json`, so Firebase receives
+empty config values and web auth can fail with:
+
+```text
+FirebaseError: Firebase: Error (auth/invalid-api-key)
+```
+
+If Android Studio still shows `auth/invalid-api-key`, open:
+
+```text
+Run > Edit Configurations... > main.dart
+```
+
+and confirm **Additional run args** contains:
+
+```text
+--dart-define-from-file=firebase_config.local.json
 ```
 
 Build web with:

@@ -1,6 +1,23 @@
-class TableSelectionViewModel {
-  const TableSelectionViewModel();
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-  // TODO: Inject TableRepository and DiningSessionRepository.
-  // TODO: Load tables and start dining session with Firestore Transaction.
+import '../core/providers/firebase_providers.dart';
+import '../models/dining_session.dart';
+import '../models/table_info.dart';
+
+part 'table_selection_view_model.g.dart';
+
+@riverpod
+class TableSelectionViewModel extends _$TableSelectionViewModel {
+  @override
+  Stream<List<TableInfo>> build() {
+    return ref.watch(tableRepositoryProvider).watchTables();
+  }
+
+  Future<DiningSession> startSession(TableInfo table) async {
+    final user = await ref.read(currentUserProvider.future);
+    final openedBy = user?.id ?? 'unknown_staff';
+    return ref
+        .read(diningSessionRepositoryProvider)
+        .startSession(tableId: table.id, openedBy: openedBy);
+  }
 }

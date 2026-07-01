@@ -1,17 +1,50 @@
-# sushi_restaurant
+# Sushi Restaurant
 
-A new Flutter project.
+Ứng dụng Flutter quản lý nhà hàng sushi theo mô hình MVVM, dùng Firebase cho
+đăng nhập/dữ liệu online và SQLite cho dữ liệu local.
 
-## Getting Started
+## Chạy app trên Chrome bằng Android Studio
 
-This project is a starting point for a Flutter application.
+File Firebase thật nằm ở máy local và không commit lên git:
 
-A few resources to get you started if this is your first Flutter project:
+```text
+firebase_config.local.json
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Nếu chưa có file này, copy từ:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```text
+firebase_config.example.json
+```
+
+rồi điền giá trị Firebase thật từ Firebase Console.
+
+Trong Android Studio, chọn run configuration:
+
+```text
+main.dart
+```
+
+Rồi bấm nút **Run** như bình thường. Configuration này đã truyền sẵn:
+
+```text
+--dart-define-from-file=firebase_config.local.json
+```
+
+Nếu chạy bằng terminal:
+
+```bash
+flutter run -d chrome --dart-define-from-file=firebase_config.local.json
+```
+
+## Lỗi `auth/invalid-api-key`
+
+Lỗi này thường xảy ra khi chạy app bằng lệnh thường:
+
+```bash
+flutter run -d chrome
+```
+
+Khi đó Firebase nhận API key rỗng vì app không được truyền file config local.
+Hãy bấm Run bằng Android Studio với configuration `main.dart`, hoặc chạy terminal
+với `--dart-define-from-file=firebase_config.local.json`.
