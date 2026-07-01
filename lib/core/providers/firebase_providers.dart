@@ -24,6 +24,7 @@ import '../../services/firestore_order_service.dart';
 import '../../services/firestore_product_service.dart';
 import '../../services/firestore_reservation_service.dart';
 import '../../services/firestore_table_service.dart';
+import '../../models/app_user.dart';
 
 part 'firebase_providers.g.dart';
 
@@ -43,7 +44,9 @@ FirebaseAuthService firebaseAuthService(Ref ref) {
 
 @riverpod
 FirestoreProductService firestoreProductService(Ref ref) {
-  return FirestoreProductService(firestore: ref.watch(firebaseFirestoreProvider));
+  return FirestoreProductService(
+    firestore: ref.watch(firebaseFirestoreProvider),
+  );
 }
 
 @riverpod
@@ -79,7 +82,15 @@ FirebaseNotificationService firebaseNotificationService(Ref ref) {
 
 @riverpod
 AuthRepository authRepository(Ref ref) {
-  return FirebaseAuthRepository(ref.watch(firebaseAuthServiceProvider));
+  return FirebaseAuthRepository(
+    ref.watch(firebaseAuthServiceProvider),
+    ref.watch(firebaseFirestoreProvider),
+  );
+}
+
+@riverpod
+Stream<AppUser?> currentUser(Ref ref) {
+  return ref.watch(authRepositoryProvider).watchCurrentUser();
 }
 
 @riverpod
@@ -113,5 +124,7 @@ ReservationRepository reservationRepository(Ref ref) {
 
 @riverpod
 NotificationRepository notificationRepository(Ref ref) {
-  return FirebaseNotificationRepository(ref.watch(firebaseNotificationServiceProvider));
+  return FirebaseNotificationRepository(
+    ref.watch(firebaseNotificationServiceProvider),
+  );
 }

@@ -12,7 +12,7 @@ class SushiRestaurantApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'Sushi Restaurant',
+      title: 'Sishu - スィシュ',
       theme: AppTheme.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,

@@ -6,9 +6,9 @@ class DefaultFirebaseOptions {
   const DefaultFirebaseOptions._();
 
   static FirebaseOptions get currentPlatform {
-    if (kIsWeb) return web;
+    if (kIsWeb) return _validate(web, 'web');
 
-    return switch (defaultTargetPlatform) {
+    final options = switch (defaultTargetPlatform) {
       TargetPlatform.android => android,
       TargetPlatform.iOS => ios,
       TargetPlatform.windows => windows,
@@ -22,6 +22,25 @@ class DefaultFirebaseOptions {
         'Firebase options are not supported for this platform.',
       ),
     };
+
+    return _validate(options, defaultTargetPlatform.name);
+  }
+
+  static FirebaseOptions _validate(FirebaseOptions options, String platform) {
+    if (options.apiKey.isNotEmpty &&
+        options.appId.isNotEmpty &&
+        options.messagingSenderId.isNotEmpty &&
+        options.projectId.isNotEmpty) {
+      return options;
+    }
+
+    throw StateError(
+      'Firebase config is missing for $platform. Run with '
+      '--dart-define-from-file=firebase_config.local.json or use the Android '
+      'Studio run configuration "main.dart". Copy '
+      'firebase_config.example.json to firebase_config.local.json and fill in '
+      'real Firebase values first.',
+    );
   }
 
   static const FirebaseOptions web = FirebaseOptions(

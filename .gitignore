@@ -45,6 +45,7 @@ app.*.map.json
 /android/app/release
 
 .playwright-mcp/
+.omo
 
 # Local Firebase build-time values. Share privately with teammates, never commit.
 firebase_config.local.json
