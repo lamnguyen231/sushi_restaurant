@@ -19,5 +19,7 @@ class DiningCartScreen extends StatelessWidget {
         ),
       ],
     );
+    // idea: change from a cart only to kitchen into a cart/history view
+    // and can switch between the two
   }
 }

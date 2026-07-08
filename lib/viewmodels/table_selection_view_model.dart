@@ -13,11 +13,22 @@ class TableSelectionViewModel extends _$TableSelectionViewModel {
     return ref.watch(tableRepositoryProvider).watchTables();
   }
 
-  Future<DiningSession> startSession(TableInfo table) async {
+  Future<DiningSession> startSession(
+    TableInfo table, {
+    required int guestCount,
+  }) async {
     final user = await ref.read(currentUserProvider.future);
     final openedBy = user?.id ?? 'unknown_staff';
     return ref
         .read(diningSessionRepositoryProvider)
-        .startSession(tableId: table.id, openedBy: openedBy);
+        .startSession(
+          tableId: table.id,
+          openedBy: openedBy,
+          guestCount: guestCount,
+        );
+  }
+
+  Future<void> closeSession(String sessionId) async {
+    await ref.read(diningSessionRepositoryProvider).closeSession(sessionId);
   }
 }

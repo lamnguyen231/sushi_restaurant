@@ -71,6 +71,9 @@ class TableSelectionScreen extends ConsumerWidget {
                       onStartSession: table.status == TableStatus.available
                           ? () => _startSession(context, ref, table)
                           : null,
+                      onCloseSession: table.activeSessionId != null
+                          ? () => _closeSession(context, ref, table)
+                          : null,
                     );
                   },
                 ),
@@ -87,34 +90,183 @@ class TableSelectionScreen extends ConsumerWidget {
     WidgetRef ref,
     TableInfo table,
   ) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final router = GoRouter.of(context);
+    final guestCount = await _askGuestCount(context, table);
+    if (!context.mounted) return;
+
+    if (guestCount == null) {
+      return;
+    }
 
     try {
       await ref
           .read(tableSelectionViewModelProvider.notifier)
-          .startSession(table);
-      messenger.showSnackBar(
+          .startSession(
+            table,
+            guestCount: guestCount,
+          );
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đã mở phiên cho ${table.name}.')),
       );
-      router.go('/dining/menu');
+      GoRouter.of(context).go('/dining/menu');
     } catch (error) {
-      messenger.showSnackBar(
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Không thể mở phiên: $error')),
       );
     }
   }
+
+  Future<void> _closeSession(
+    BuildContext context,
+    WidgetRef ref,
+    TableInfo table,
+  ) async {
+    final sessionId = table.activeSessionId;
+
+    if (sessionId == null) {
+      return;
+    }
+
+    final confirmed = await _confirmCloseSession(context, table);
+    if (!context.mounted) return;
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(tableSelectionViewModelProvider.notifier)
+          .closeSession(sessionId);
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã kết thúc phiên của ${table.name}.')),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không thể kết thúc phiên: $error')),
+      );
+    }
+  }
+
+  Future<int?> _askGuestCount(BuildContext context, TableInfo table) async {
+    final controller = TextEditingController(text: '1');
+    String? errorText;
+
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Mở phiên cho ${table.name}'),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Số khách',
+                  helperText: 'Nhập số khách thực tế đang ngồi tại bàn.',
+                  errorText: errorText,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Hủy'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final guestCount = int.tryParse(controller.text.trim());
+
+                    if (guestCount == null) {
+                      setDialogState(() {
+                        errorText = 'Vui lòng nhập số khách hợp lệ.';
+                      });
+                      return;
+                    }
+
+                    if (guestCount <= 0) {
+                      setDialogState(() {
+                        errorText = 'Số khách phải lớn hơn 0.';
+                      });
+                      return;
+                    }
+
+                    if (guestCount > table.capacity) {
+                      setDialogState(() {
+                        errorText =
+                            'Số khách không được vượt quá sức chứa ${table.capacity}.';
+                      });
+                      return;
+                    }
+
+                    Navigator.of(context).pop(guestCount);
+                  },
+                  child: const Text('Xác nhận mở phiên'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+    return result;
+  }
+
+  Future<bool> _confirmCloseSession(
+    BuildContext context,
+    TableInfo table,
+  ) async {
+    final result = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Kết thúc phiên ${table.name}?'),
+            content: const Text(
+              'Sau khi kết thúc, bàn sẽ mở lại cho phiên mới.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Hủy'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Xác nhận kết thúc'),
+              ),
+            ],
+          );
+        },
+    );
+
+    return result ?? false;
+  }
 }
 
 class _TableCard extends StatelessWidget {
-  const _TableCard({required this.table, required this.onStartSession});
+  const _TableCard({
+    required this.table,
+    required this.onStartSession,
+    required this.onCloseSession,
+  });
 
   final TableInfo table;
   final VoidCallback? onStartSession;
+  final VoidCallback? onCloseSession;
 
   @override
   Widget build(BuildContext context) {
     final available = table.status == TableStatus.available;
+    final occupied = table.status == TableStatus.occupied;
 
     return InkFrame(
       backgroundColor: available ? AppTheme.paper : AppTheme.rice,
@@ -148,12 +300,24 @@ class _TableCard extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const Spacer(),
-          PrimaryButton(
-            label: 'Mở phiên',
-            onPressed: onStartSession,
-          ),
+          if (available)
+            PrimaryButton(
+              label: 'Mở phiên',
+              onPressed: onStartSession,
+            )
+          else if (occupied && table.activeSessionId != null)
+            PrimaryButton(
+              label: 'Đóng phiên',
+              onPressed: onCloseSession,
+            )
+          else
+            PrimaryButton(
+              label: 'Không khả dụng',
+              onPressed: null,
+            ),
         ],
       ),
     );
   }
 }
+

@@ -9,7 +9,7 @@ class FirestoreDiningSessionService {
   Future<DocumentReference<Map<String, dynamic>>> createSession({
     required String tableId,
     required String openedBy,
-    int? guestCount,
+    required int guestCount,
   }) async {
     final sessionRef = _firestore.collection('dining_sessions').doc();
     final tableRef = _firestore.collection('tables').doc(tableId);
@@ -53,12 +53,17 @@ class FirestoreDiningSessionService {
     await _firestore.runTransaction((transaction) async {
       final sessionSnapshot = await transaction.get(sessionRef);
       final sessionData = sessionSnapshot.data();
+
       if (sessionData == null) {
         throw StateError('Không tìm thấy phiên dùng bữa.');
       }
 
       final tableId = sessionData['tableId'] as String;
       final tableRef = _firestore.collection('tables').doc(tableId);
+
+      if (sessionData['status'] != 'active') {
+        throw StateError('Phiên này không còn hoạt động');
+      }
 
       transaction.update(sessionRef, {
         'status': 'closed',

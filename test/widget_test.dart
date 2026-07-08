@@ -8,6 +8,11 @@ import 'package:sushi_restaurant/repositories/auth_repository.dart';
 
 void main() {
   testWidgets('Sushi scaffold shows public website home', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1400, 900);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [authRepositoryProvider.overrideWithValue(_SignedOutAuth())],
