@@ -15,6 +15,30 @@ That file is ignored by git. Copy the shape from:
 firebase_config.example.json
 ```
 
+## Android/iOS config
+
+`lib/firebase_options.dart` can read `firebase_config.local.json` with
+`String.fromEnvironment`, but native JSON/plist files cannot. Gradle and Xcode
+read those files before Dart runs. To keep one local source of truth, the native
+files are generated from the same ignored JSON:
+
+```text
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+```
+
+Those paths stay ignored so generated native files do not get committed or
+trigger GitHub secret scanning.
+
+Generate them manually with:
+
+```bash
+dart run tool/generate_native_firebase_config.dart
+```
+
+Android also runs that generator before Google Services Gradle tasks. iOS runs
+it from the Xcode build phase named `Generate Firebase Config`.
+
 ## Run commands
 
 In Android Studio, choose the `main.dart` run configuration and press the normal
@@ -73,7 +97,9 @@ If Firebase config changes, run FlutterFire locally:
 flutterfire configure
 ```
 
-Then copy the generated values into `firebase_config.local.json`. Do not commit the generated raw values.
+Then copy the generated Dart values into `firebase_config.local.json`. The
+native files will be generated from that JSON. Do not commit generated raw
+values.
 
 The app still imports:
 

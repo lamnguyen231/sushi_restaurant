@@ -1,11 +1,18 @@
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
     id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val generateNativeFirebaseConfig by tasks.registering(Exec::class) {
+    workingDir = rootProject.projectDir.parentFile
+    commandLine("dart", "run", "tool/generate_native_firebase_config.dart")
+}
+
+tasks.matching { it.name.contains("GoogleServices") }.configureEach {
+    dependsOn(generateNativeFirebaseConfig)
 }
 
 android {

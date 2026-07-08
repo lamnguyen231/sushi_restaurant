@@ -37,6 +37,27 @@ Nếu chạy bằng terminal:
 flutter run -d chrome --dart-define-from-file=firebase_config.local.json
 ```
 
+## Firebase trên Android/iOS
+
+Android/iOS cũng lấy giá trị từ `firebase_config.local.json`, nhưng file native
+không thể dùng trực tiếp `String.fromEnvironment` như Dart. Vì vậy project tự
+generate file native từ cùng file local này:
+
+```text
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+```
+
+Hai đường dẫn này được ignore để git không commit nhầm và GitHub không báo
+secret scanning. Android build sẽ tự generate trước Google Services task. iOS
+build sẽ tự generate ở build phase `Generate Firebase Config`.
+
+Muốn tạo thủ công:
+
+```bash
+dart run tool/generate_native_firebase_config.dart
+```
+
 ## Lỗi `auth/invalid-api-key`
 
 Lỗi này thường xảy ra khi chạy app bằng lệnh thường:
