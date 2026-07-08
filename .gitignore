@@ -49,3 +49,8 @@ app.*.map.json
 
 # Local Firebase build-time values. Share privately with teammates, never commit.
 firebase_config.local.json
+
+# Native Firebase config files generated/downloaded from Firebase Console.
+# Keep these local-only because GitHub secret scanning flags their API keys.
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
