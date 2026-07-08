@@ -27,7 +27,7 @@ Run button. That configuration passes:
 Run the app from terminal with:
 
 ```bash
-flutter run -d chrome --dart-define-from-file=firebase_config.local.json
+flutter run -d chrome --dart-define-from-file=firebase_config.layout.json
 ```
 
 Do not run Firebase features with only:
@@ -58,13 +58,13 @@ and confirm **Additional run args** contains:
 Build web with:
 
 ```bash
-flutter build web --dart-define-from-file=firebase_config.local.json
+flutter build web --dart-define-from-file=firebase_config.layout.json
 ```
 
 Run the Firestore web seed tool with:
 
 ```bash
-flutter run -t tool/seed_firestore_web.dart -d chrome --dart-define-from-file=firebase_config.local.json
+flutter run -t tool/seed_firestore_web.dart -d chrome --dart-define-from-file=firebase_config.layout.json
 ```
 
 If Firebase config changes, run FlutterFire locally:

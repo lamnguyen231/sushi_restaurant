@@ -12,7 +12,7 @@ class FirestoreDiningSessionRepository implements DiningSessionRepository {
   Future<DiningSession> startSession({
     required String tableId,
     required String openedBy,
-    int? guestCount,
+    required int guestCount,
   }) async {
     final sessionRef = await _sessionService.createSession(
       tableId: tableId,

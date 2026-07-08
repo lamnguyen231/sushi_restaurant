@@ -45,7 +45,7 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (_roleActionFor(user) case final action?) ...[
+                      for (final action in _roleActionFor(user)) ...[
                         _RoleActionButton(action: action),
                         const SizedBox(width: 10),
                       ],
@@ -150,7 +150,7 @@ class _UserMenu extends ConsumerWidget {
         ),
       ],
       child: InkFrame(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         backgroundColor: AppTheme.ink,
         borderColor: AppTheme.paper,
         cornerSize: 8,
@@ -183,12 +183,12 @@ class _RoleActionButton extends StatelessWidget {
   }
 }
 
-_RoleAction? _roleActionFor(AppUser user) {
+List<_RoleAction> _roleActionFor(AppUser user) {
   return switch (user.role) {
-    UserRole.manager => const _RoleAction('DASHBOARD', '/staff/tables'),
-    UserRole.staff => const _RoleAction('SETUP MODE', '/staff/tables'),
-    UserRole.kitchen => const _RoleAction('KITCHEN', '/kitchen/orders'),
-    UserRole.customer => null,
+    UserRole.manager => const [_RoleAction('DASHBOARD', '/staff/tables'), _RoleAction('TABLES LIST', '/staff/tables')],
+    UserRole.staff => const [_RoleAction('TABLES LIST', '/staff/tables')],
+    UserRole.kitchen => const [_RoleAction('KITCHEN', '/kitchen/orders')],
+    UserRole.customer => const [],
   };
 }
 

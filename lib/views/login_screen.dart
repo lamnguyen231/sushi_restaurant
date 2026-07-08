@@ -71,17 +71,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: Theme.of(context).textTheme.headlineLarge,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'ACCOUNT',
-                          style: Theme.of(context).textTheme.titleMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 18),
-                        const Text(
-                          'Đăng nhập để hệ thống tự nhận diện vai trò của bạn.',
-                          textAlign: TextAlign.center,
-                        ),
                         const SizedBox(height: 30),
                         TextFormField(
                           controller: _emailController,
