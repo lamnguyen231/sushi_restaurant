@@ -34,7 +34,7 @@ Rồi bấm nút **Run** như bình thường. Configuration này đã truyền 
 Nếu chạy bằng terminal:
 
 ```bash
-flutter run -d chrome --dart-define-from-file=firebase_config.layout.json
+flutter run -d chrome --dart-define-from-file=firebase_config.local.json
 ```
 
 ## Lỗi `auth/invalid-api-key`
