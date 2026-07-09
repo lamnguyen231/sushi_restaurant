@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/providers/firebase_providers.dart';
 import '../core/theme/app_theme.dart';
 import '../models/sushi_product.dart';
 import '../viewmodels/web_menu_view_model.dart';
@@ -241,6 +242,13 @@ class _ProductGrid extends ConsumerWidget {
   }
 
   void _addToCart(BuildContext context, WidgetRef ref, SushiProduct product) {
+    final user = ref.read(currentUserProvider).value;
+
+    if (user == null) {
+      context.go('/login');
+      return;
+    }
+
     // Thêm vào giỏ hàng (mặc định qty = 1, nếu đã có thì cộng thêm 1)
     ref.read(webCartViewModelProvider.notifier).addItem(product);
 

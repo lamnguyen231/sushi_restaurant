@@ -9,6 +9,7 @@ class AppTheme {
   static const Color mutedInk = Color(0xFF5B574F);
   static const Color rice = Color(0xFFE7DDCB);
   static const Color vermilion = Color(0xFFB53A2F);
+  static const Color moss = Color(0xFF1B4332);
 
   static ThemeData get light {
     final colorScheme = ColorScheme.fromSeed(

@@ -38,6 +38,28 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() => _authService.signOut();
 
+  @override
+  Future<void> updateProfile({
+    required String uid,
+    String? fullName,
+    String? phoneNumber,
+    String? address,
+    String? cccd,
+  }) async {
+    final updateData = <String, dynamic>{};
+    if (fullName != null) updateData['displayName'] = fullName;
+    if (phoneNumber != null) updateData['phoneNumber'] = phoneNumber;
+    if (address != null) updateData['address'] = address;
+    if (cccd != null) updateData['cccd'] = cccd;
+
+    if (updateData.isNotEmpty) {
+      await _firestore.collection('users').doc(uid).set(
+        updateData,
+        SetOptions(merge: true),
+      );
+    }
+  }
+
   Future<AppUser> _loadAppUser(
     String uid, {
     required String fallbackEmail,
@@ -50,6 +72,9 @@ class FirebaseAuthRepository implements AuthRepository {
       email: data?['email'] as String? ?? fallbackEmail,
       displayName: data?['displayName'] as String?,
       role: _roleFromFirestore(data?['role'] as String?),
+      phoneNumber: data?['phoneNumber'] as String?,
+      address: data?['address'] as String?,
+      cccd: data?['cccd'] as String?,
     );
   }
 

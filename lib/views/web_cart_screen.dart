@@ -249,8 +249,8 @@ class _CartItemTile extends ConsumerWidget {
           // Quantity selector
           _QuantitySelector(
             quantity: item.quantity,
-            onDecrement: () => vm.updateQuantity(product.id, item.quantity - 1),
-            onIncrement: () => vm.updateQuantity(product.id, item.quantity + 1),
+            onDecrement: () => vm.updateQuantity(product.id, item.quantity - 1, note: item.note),
+            onIncrement: () => vm.updateQuantity(product.id, item.quantity + 1, note: item.note),
           ),
           const SizedBox(width: 20),
 
@@ -274,7 +274,7 @@ class _CartItemTile extends ConsumerWidget {
             tooltip: 'Xóa khỏi giỏ',
             icon: const Icon(Icons.delete_outline, size: 20),
             color: AppTheme.vermilion,
-            onPressed: () => _confirmRemove(context, ref, product.id, product.name),
+            onPressed: () => _confirmRemove(context, ref, product.id, product.name, item.note),
           ),
         ],
       ),
@@ -286,13 +286,14 @@ class _CartItemTile extends ConsumerWidget {
     WidgetRef ref,
     String productId,
     String productName,
+    String? note,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => _RemoveConfirmDialog(productName: productName),
     );
     if (confirmed == true) {
-      ref.read(webCartViewModelProvider.notifier).removeItem(productId);
+      ref.read(webCartViewModelProvider.notifier).removeItem(productId, note: note);
     }
   }
 }
