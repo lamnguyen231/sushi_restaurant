@@ -127,4 +127,13 @@ class _SignedOutAuth implements AuthRepository {
 
   @override
   Future<void> signOut() async {}
+
+  @override
+  Future<void> updateProfile({
+    required String uid,
+    String? fullName,
+    String? phoneNumber,
+    String? address,
+    String? cccd,
+  }) async {}
 }
