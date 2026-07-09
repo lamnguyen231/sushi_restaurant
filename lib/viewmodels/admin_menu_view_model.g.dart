@@ -34,7 +34,7 @@ final class AdminMenuViewModelProvider
 }
 
 String _$adminMenuViewModelHash() =>
-    r'4ec7b84a32ab2ee1f60e336a22957be1683210cf';
+    r'8970eba27eb48b1274624ac9ee92b291fa851fd2';
 
 abstract class _$AdminMenuViewModel extends $StreamNotifier<AdminMenuState> {
   Stream<AdminMenuState> build();

@@ -6,6 +6,7 @@ import '../core/enums/app_enums.dart';
 import '../core/providers/firebase_providers.dart';
 import '../core/theme/app_theme.dart';
 import '../models/app_user.dart';
+import '../viewmodels/web_cart_view_model.dart';
 import 'ink_frame.dart';
 
 class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -45,11 +46,27 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
           _NavLink(label: 'MENU', onTap: () => context.go('/web/menu')),
           _NavLink(label: 'INFO', onTap: () => context.go('/info')),
         ],
-        IconButton(
-          tooltip: 'Giỏ hàng',
-          onPressed: () => context.go('/web/cart'),
-          color: AppTheme.paper,
-          icon: const Icon(Icons.shopping_cart_outlined),
+        // Cart icon with badge
+        Consumer(
+          builder: (context, ref, _) {
+            final cartCount =
+                ref.watch(webCartViewModelProvider).totalQuantity;
+            return Badge(
+              isLabelVisible: cartCount > 0,
+              label: Text(
+                cartCount > 99 ? '99+' : '$cartCount',
+                style: const TextStyle(fontSize: 10, color: Colors.white),
+              ),
+              backgroundColor: AppTheme.vermilion,
+              offset: const Offset(-4, 4),
+              child: IconButton(
+                tooltip: 'Giỏ hàng ($cartCount sản phẩm)',
+                onPressed: () => context.go('/web/cart'),
+                color: AppTheme.paper,
+                icon: const Icon(Icons.shopping_cart_outlined),
+              ),
+            );
+          },
         ),
         Padding(
           padding: const EdgeInsets.only(left: 10, right: 18),

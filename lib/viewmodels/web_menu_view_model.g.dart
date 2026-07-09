@@ -33,7 +33,7 @@ final class WebMenuViewModelProvider
   WebMenuViewModel create() => WebMenuViewModel();
 }
 
-String _$webMenuViewModelHash() => r'58eea16c34d7296fe442e04923184594dbecfcc7';
+String _$webMenuViewModelHash() => r'7337237d7d3d304cbdfdc8445fc56bb2cb3fb1c6';
 
 abstract class _$WebMenuViewModel extends $StreamNotifier<WebMenuState> {
   Stream<WebMenuState> build();

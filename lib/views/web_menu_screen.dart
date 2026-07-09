@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/sushi_product.dart';
 import '../viewmodels/web_menu_view_model.dart';
 import '../widgets/menu_filter_bar.dart';
 import '../widgets/menu_pagination_bar.dart';
+import '../viewmodels/web_cart_view_model.dart';
 import '../widgets/sushi_nav_bar.dart';
 import '../widgets/sushi_product_card.dart';
 // ProductDetailDialog is defined inside sushi_product_card.dart
@@ -199,13 +201,13 @@ class _GridPainter extends CustomPainter {
 
 // ── Product Grid ──────────────────────────────────────────────────────────────
 
-class _ProductGrid extends StatelessWidget {
+class _ProductGrid extends ConsumerWidget {
   const _ProductGrid({required this.products});
 
   final List<SushiProduct> products;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final width = MediaQuery.sizeOf(context).width;
     final crossAxisCount = switch (width) {
       >= 1200 => 4,
@@ -230,15 +232,18 @@ class _ProductGrid extends StatelessWidget {
           onViewDetail: () => ProductDetailDialog.show(
             context,
             product: product,
-            onAddToCart: () => _addToCart(context, product.name),
+            onAddToCart: () => _addToCart(context, ref, product),
           ),
-          onAddToCart: () => _addToCart(context, product.name),
+          onAddToCart: () => _addToCart(context, ref, product),
         );
       },
     );
   }
 
-  void _addToCart(BuildContext context, String productName) {
+  void _addToCart(BuildContext context, WidgetRef ref, SushiProduct product) {
+    // Thêm vào giỏ hàng (mặc định qty = 1, nếu đã có thì cộng thêm 1)
+    ref.read(webCartViewModelProvider.notifier).addItem(product);
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -248,7 +253,7 @@ class _ProductGrid extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Đã thêm "$productName" vào giỏ hàng!\nVui lòng vào giỏ hàng để thêm số lượng và thanh toán.',
+                'Đã thêm "${product.name}" vào giỏ hàng!\nVui lòng vào giỏ hàng để thêm số lượng và thanh toán.',
               ),
             ),
           ],
@@ -260,7 +265,7 @@ class _ProductGrid extends StatelessWidget {
         action: SnackBarAction(
           label: 'GIỎ HÀNG',
           textColor: Colors.white70,
-          onPressed: () {},
+          onPressed: () => context.go('/web/cart'),
         ),
       ),
     );
