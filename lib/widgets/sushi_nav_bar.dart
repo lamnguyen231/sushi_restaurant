@@ -17,7 +17,7 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(currentUserProvider);
-    final isCompact = MediaQuery.sizeOf(context).width < 900;
+    final isCompact = MediaQuery.sizeOf(context).width < 800;
 
     return AppBar(
       titleSpacing: isCompact ? 12 : 18,
@@ -30,7 +30,16 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         if (isCompact)
-          const _PhoneNavMenu()
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.menu, color: AppTheme.paper),
+            color: AppTheme.paper,
+            onSelected: (route) => context.go(route),
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: '/about', child: Text('ABOUT')),
+              const PopupMenuItem(value: '/web/menu', child: Text('MENU')),
+              const PopupMenuItem(value: '/info', child: Text('INFO')),
+            ],
+          )
         else ...[
           _NavLink(label: 'ABOUT', onTap: () => context.go('/about')),
           _NavLink(label: 'MENU', onTap: () => context.go('/web/menu')),
@@ -43,10 +52,7 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
           icon: const Icon(Icons.shopping_cart_outlined),
         ),
         Padding(
-          padding: EdgeInsets.only(
-            left: isCompact ? 4 : 22,
-            right: isCompact ? 8 : 18,
-          ),
+          padding: const EdgeInsets.only(left: 10, right: 18),
           child: userState.when(
             data: (user) => user == null
                 ? _LoginNavButton(
@@ -61,7 +67,10 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
                           _RoleActionButton(action: action),
                           const SizedBox(width: 10),
                         ],
-                      _UserMenu(user: user),
+                      _UserMenu(
+                        user: user,
+                        compactActions: isCompact ? _roleActionFor(user) : const [],
+                      ),
                     ],
                   ),
             loading: () => const SizedBox.square(
@@ -74,30 +83,6 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _PhoneNavMenu extends StatelessWidget {
-  const _PhoneNavMenu();
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      tooltip: 'Menu',
-      icon: const Icon(Icons.menu, color: AppTheme.paper),
-      color: AppTheme.paper,
-      offset: const Offset(0, 46),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-        side: BorderSide(color: AppTheme.ink),
-      ),
-      onSelected: context.go,
-      itemBuilder: (context) => const [
-        PopupMenuItem(value: '/about', child: Text('ABOUT')),
-        PopupMenuItem(value: '/web/menu', child: Text('MENU')),
-        PopupMenuItem(value: '/info', child: Text('INFO')),
       ],
     );
   }
@@ -154,9 +139,13 @@ class _LoginNavButton extends StatelessWidget {
 }
 
 class _UserMenu extends ConsumerWidget {
-  const _UserMenu({required this.user});
+  const _UserMenu({
+    required this.user,
+    this.compactActions = const [],
+  });
 
   final AppUser user;
+  final List<_RoleAction> compactActions;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -164,7 +153,7 @@ class _UserMenu extends ConsumerWidget {
         ? user.displayName!.trim()
         : user.email.split('@').first;
 
-    return PopupMenuButton<_UserMenuAction>(
+    return PopupMenuButton<dynamic>(
       tooltip: 'Tài khoản',
       color: AppTheme.paper,
       offset: const Offset(0, 46),
@@ -173,18 +162,36 @@ class _UserMenu extends ConsumerWidget {
         side: BorderSide(color: AppTheme.ink),
       ),
       onSelected: (action) async {
-        switch (action) {
-          case _UserMenuAction.profile:
-            context.go('/profile');
-          case _UserMenuAction.signOut:
-            await ref.read(authRepositoryProvider).signOut();
-            if (context.mounted) context.go('/');
+        if (action is _UserMenuAction) {
+          switch (action) {
+            case _UserMenuAction.profile:
+              context.go('/profile');
+            case _UserMenuAction.signOut:
+              await ref.read(authRepositoryProvider).signOut();
+              if (context.mounted) context.go('/');
+          }
+        } else if (action is String) {
+          context.go(action);
         }
       },
-      itemBuilder: (context) => const [
-        PopupMenuItem(value: _UserMenuAction.profile, child: Text('Profile')),
-        PopupMenuDivider(),
-        PopupMenuItem(value: _UserMenuAction.signOut, child: Text('Log out')),
+      itemBuilder: (context) => [
+        if (compactActions.isNotEmpty) ...[
+          for (final a in compactActions)
+            PopupMenuItem(
+              value: a.path,
+              child: Text(a.label),
+            ),
+          const PopupMenuDivider(),
+        ],
+        const PopupMenuItem(
+          value: _UserMenuAction.profile,
+          child: Text('Profile'),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
+          value: _UserMenuAction.signOut,
+          child: Text('Log out'),
+        ),
       ],
       child: InkFrame(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),

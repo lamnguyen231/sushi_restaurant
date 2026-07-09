@@ -29,10 +29,6 @@ class LayoutGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!isAllowed(context)) {
-      return UnsupportedLayoutView(title: title, message: message);
-    }
-
     return child;
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../layout/layout_gate.dart';
 import '../../views/about_screen.dart';
 import '../../views/dining_cart_screen.dart';
 import '../../views/dining_menu_screen.dart';
@@ -23,82 +22,56 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        builder: (context, state) => const LayoutGate.public(
-          child: WebHomeScreen(),
-        ),
+        builder: (context, state) => const WebHomeScreen(),
       ),
       GoRoute(
         path: '/about',
-        builder: (context, state) => const LayoutGate.public(
-          child: AboutScreen(),
-        ),
+        builder: (context, state) => const AboutScreen(),
       ),
       GoRoute(
         path: '/info',
-        builder: (context, state) => const LayoutGate.public(
-          child: InfoScreen(),
-        ),
+        builder: (context, state) => const InfoScreen(),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/profile',
-        builder: (context, state) => const LayoutGate.public(
-          child: ProfileScreen(),
-        ),
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: '/staff/tables',
-        builder: (context, state) => const LayoutGate.staff(
-          child: TableSelectionScreen(),
-        ),
+        builder: (context, state) => const TableSelectionScreen(),
       ),
       GoRoute(
         path: '/dining/menu',
-        builder: (context, state) => const LayoutGate.staff(
-          child: DiningMenuScreen(),
-        ),
+        builder: (context, state) => const DiningMenuScreen(),
       ),
       GoRoute(
         path: '/dining/cart',
-        builder: (context, state) => const LayoutGate.staff(
-          child: DiningCartScreen(),
-        ),
+        builder: (context, state) => const DiningCartScreen(),
       ),
       GoRoute(
         path: '/dining/orders',
-        builder: (context, state) => const LayoutGate.staff(
-          child: SessionOrdersScreen(),
-        ),
+        builder: (context, state) => const SessionOrdersScreen(),
       ),
       GoRoute(
         path: '/kitchen/orders',
-        builder: (context, state) => const LayoutGate.staff(
-          child: KitchenOrdersScreen(),
-        ),
+        builder: (context, state) => const KitchenOrdersScreen(),
       ),
       GoRoute(
         path: '/web/menu',
-        builder: (context, state) => const LayoutGate.public(
-          child: WebMenuScreen(),
-        ),
+        builder: (context, state) => const WebMenuScreen(),
       ),
       GoRoute(
         path: '/web/cart',
-        builder: (context, state) => const LayoutGate.public(
-          child: WebCartScreen(),
-        ),
+        builder: (context, state) => const WebCartScreen(),
       ),
       GoRoute(
         path: '/web/checkout',
-        builder: (context, state) => const LayoutGate.public(
-          child: PickupCheckoutScreen(),
-        ),
+        builder: (context, state) => const PickupCheckoutScreen(),
       ),
       GoRoute(
         path: '/web/reservation',
-        builder: (context, state) => const LayoutGate.public(
-          child: ReservationScreen(),
-        ),
+        builder: (context, state) => const ReservationScreen(),
       ),
     ],
   );
