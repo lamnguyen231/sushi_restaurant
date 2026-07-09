@@ -20,7 +20,7 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
     final isCompact = MediaQuery.sizeOf(context).width < 800;
 
     return AppBar(
-      titleSpacing: 18,
+      titleSpacing: isCompact ? 12 : 18,
       title: InkWell(
         onTap: () => context.go('/'),
         child: Text(
@@ -55,7 +55,10 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.only(left: 10, right: 18),
           child: userState.when(
             data: (user) => user == null
-                ? _LoginNavButton(onTap: () => context.go('/login'))
+                ? _LoginNavButton(
+                    isCompact: isCompact,
+                    onTap: () => context.go('/login'),
+                  )
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -75,6 +78,7 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
               child: CircularProgressIndicator(strokeWidth: 1.5),
             ),
             error: (error, stackTrace) => _LoginNavButton(
+              isCompact: isCompact,
               onTap: () => context.go('/login'),
             ),
           ),
@@ -104,25 +108,31 @@ class _NavLink extends StatelessWidget {
 }
 
 class _LoginNavButton extends StatelessWidget {
-  const _LoginNavButton({required this.onTap});
+  const _LoginNavButton({required this.onTap, this.isCompact = false});
 
   final VoidCallback onTap;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: InkFrame(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 12 : 18,
+          vertical: isCompact ? 8 : 10,
+        ),
         backgroundColor: AppTheme.ink,
         borderColor: AppTheme.paper,
         cornerSize: 8,
-        child: Text(
-          'LOGIN',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppTheme.paper,
+        child: isCompact
+            ? const Icon(Icons.login, color: AppTheme.paper, size: 18)
+            : Text(
+                'LOGIN',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: AppTheme.paper),
               ),
-        ),
       ),
     );
   }
@@ -190,9 +200,9 @@ class _UserMenu extends ConsumerWidget {
         cornerSize: 8,
         child: Text(
           'Hi, $name',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppTheme.paper,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(color: AppTheme.paper),
         ),
       ),
     );

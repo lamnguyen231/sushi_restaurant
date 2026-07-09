@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 
-enum ScreenClass {
-  phone,
-  tablet,
-  desktop,
-}
+enum ScreenClass { phone, tablet, desktop }
 
 ScreenClass screenClassOf(BuildContext context) {
-  final width = MediaQuery.sizeOf(context).width;
+  final size = MediaQuery.sizeOf(context);
+  final shortestSide = size.shortestSide;
 
-  if (width >= 1200) {
+  if (shortestSide >= 900) {
     return ScreenClass.desktop;
   }
 
-  if (width >= 700) {
+  if (shortestSide >= 600) {
     return ScreenClass.tablet;
   }
 
@@ -49,9 +46,9 @@ bool isDesktop(BuildContext context) {
 }
 
 bool supportsPublicGuestLayout(BuildContext context) {
-  return isPortraitPhone(context) || isDesktop(context);
+  return true;
 }
 
 bool supportsStaffLayout(BuildContext context) {
-  return isLandscapeTablet(context) || isDesktop(context);
+  return true;
 }

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
@@ -7,8 +9,14 @@ plugins {
 }
 
 val generateNativeFirebaseConfig by tasks.registering(Exec::class) {
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+    val flutterSdkPath = localProperties.getProperty("flutter.sdk")
+    val dartExecutable = rootProject.file("$flutterSdkPath/bin/dart.bat")
+
     workingDir = rootProject.projectDir.parentFile
-    commandLine("dart", "run", "tool/generate_native_firebase_config.dart")
+    commandLine(dartExecutable.absolutePath, "run", "tool/generate_native_firebase_config.dart")
 }
 
 tasks.matching { it.name.contains("GoogleServices") }.configureEach {
