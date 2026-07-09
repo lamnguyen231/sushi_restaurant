@@ -8,5 +8,13 @@ abstract interface class AuthRepository {
     required String password,
   });
 
+  Future<void> updateProfile({
+    required String uid,
+    String? fullName,
+    String? phoneNumber,
+    String? address,
+    String? cccd,
+  });
+
   Future<void> signOut();
 }
