@@ -34,7 +34,7 @@ final class DiningMenuViewModelProvider
 }
 
 String _$diningMenuViewModelHash() =>
-    r'c0417d2ec7635b2c27a888ba37f406803f15bfe6';
+    r'20c4753445897b259b2cff42af44dff74a492c00';
 
 abstract class _$DiningMenuViewModel
     extends $StreamNotifier<List<SushiProduct>> {

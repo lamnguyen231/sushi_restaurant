@@ -219,7 +219,11 @@ class _RoleActionButton extends StatelessWidget {
 
 List<_RoleAction> _roleActionFor(AppUser user) {
   return switch (user.role) {
-    UserRole.manager => const [_RoleAction('DASHBOARD', '/staff/tables'), _RoleAction('TABLES LIST', '/staff/tables')],
+    UserRole.manager => const [
+        _RoleAction('DASHBOARD', '/staff/tables'),
+        _RoleAction('TABLES LIST', '/staff/tables'),
+        _RoleAction('MENU MGMT', '/admin/menu'),
+      ],
     UserRole.staff => const [_RoleAction('TABLES LIST', '/staff/tables')],
     UserRole.kitchen => const [_RoleAction('KITCHEN', '/kitchen/orders')],
     UserRole.customer => const [],
