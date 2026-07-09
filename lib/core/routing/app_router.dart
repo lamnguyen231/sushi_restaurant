@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../views/about_screen.dart';
+import '../../views/admin_menu_screen.dart';
 import '../../views/dining_cart_screen.dart';
 import '../../views/dining_menu_screen.dart';
 import '../../views/info_screen.dart';
@@ -72,6 +73,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/web/reservation',
         builder: (context, state) => const ReservationScreen(),
+      ),
+      // ── Admin routes ────────────────────────────────────────────────────
+      GoRoute(
+        path: '/admin/menu',
+        builder: (context, state) => const AdminMenuScreen(),
       ),
     ],
   );

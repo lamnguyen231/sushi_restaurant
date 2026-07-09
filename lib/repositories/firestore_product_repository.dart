@@ -8,9 +8,18 @@ class FirestoreProductRepository implements ProductRepository {
 
   final FirestoreProductService _productService;
 
+  // ── Read ──────────────────────────────────────────────────────────────────
+
   @override
   Stream<List<SushiProduct>> watchAvailableProducts() {
     return _productService.watchProducts().map(
+      (snapshot) => snapshot.docs.map(_fromDoc).toList(),
+    );
+  }
+
+  @override
+  Stream<List<SushiProduct>> watchAllProducts() {
+    return _productService.watchAllProducts().map(
       (snapshot) => snapshot.docs.map(_fromDoc).toList(),
     );
   }
@@ -21,6 +30,58 @@ class FirestoreProductRepository implements ProductRepository {
     if (!snapshot.exists) return null;
     return _fromDoc(snapshot);
   }
+
+  // ── Write ─────────────────────────────────────────────────────────────────
+
+  @override
+  Future<void> addProduct({
+    required String name,
+    required double price,
+    required String categoryId,
+    required bool isAvailable,
+    required PreparationArea preparationArea,
+    String? description,
+    String? imageUrl,
+  }) {
+    return _productService.addProduct({
+      'name': name,
+      'price': price,
+      'categoryId': categoryId,
+      'isAvailable': isAvailable,
+      'preparationArea': preparationArea.wireName,
+      if (description != null) 'description': description,
+      if (imageUrl != null) 'imageUrl': imageUrl,
+    });
+  }
+
+  @override
+  Future<void> updateProduct({
+    required String id,
+    required String name,
+    required double price,
+    required String categoryId,
+    required bool isAvailable,
+    required PreparationArea preparationArea,
+    String? description,
+    String? imageUrl,
+  }) {
+    return _productService.updateProduct(id, {
+      'name': name,
+      'price': price,
+      'categoryId': categoryId,
+      'isAvailable': isAvailable,
+      'preparationArea': preparationArea.wireName,
+      'description': description,
+      'imageUrl': imageUrl,
+    });
+  }
+
+  @override
+  Future<void> deleteProduct(String productId) {
+    return _productService.deleteProduct(productId);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   SushiProduct _fromDoc(dynamic doc) {
     final data = doc.data() as Map<String, dynamic>;
