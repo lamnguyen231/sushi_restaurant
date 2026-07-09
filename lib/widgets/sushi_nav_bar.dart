@@ -17,9 +17,10 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(currentUserProvider);
+    final isCompact = MediaQuery.sizeOf(context).width < 900;
 
     return AppBar(
-      titleSpacing: 18,
+      titleSpacing: isCompact ? 12 : 18,
       title: InkWell(
         onTap: () => context.go('/'),
         child: Text(
@@ -28,9 +29,13 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        _NavLink(label: 'ABOUT', onTap: () => context.go('/about')),
-        _NavLink(label: 'MENU', onTap: () => context.go('/web/menu')),
-        _NavLink(label: 'INFO', onTap: () => context.go('/info')),
+        if (isCompact)
+          const _PhoneNavMenu()
+        else ...[
+          _NavLink(label: 'ABOUT', onTap: () => context.go('/about')),
+          _NavLink(label: 'MENU', onTap: () => context.go('/web/menu')),
+          _NavLink(label: 'INFO', onTap: () => context.go('/info')),
+        ],
         IconButton(
           tooltip: 'Giỏ hàng',
           onPressed: () => context.go('/web/cart'),
@@ -38,17 +43,24 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
           icon: const Icon(Icons.shopping_cart_outlined),
         ),
         Padding(
-          padding: const EdgeInsets.only(left: 22, right: 18),
+          padding: EdgeInsets.only(
+            left: isCompact ? 4 : 22,
+            right: isCompact ? 8 : 18,
+          ),
           child: userState.when(
             data: (user) => user == null
-                ? _LoginNavButton(onTap: () => context.go('/login'))
+                ? _LoginNavButton(
+                    isCompact: isCompact,
+                    onTap: () => context.go('/login'),
+                  )
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      for (final action in _roleActionFor(user)) ...[
-                        _RoleActionButton(action: action),
-                        const SizedBox(width: 10),
-                      ],
+                      if (!isCompact)
+                        for (final action in _roleActionFor(user)) ...[
+                          _RoleActionButton(action: action),
+                          const SizedBox(width: 10),
+                        ],
                       _UserMenu(user: user),
                     ],
                   ),
@@ -57,10 +69,35 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
               child: CircularProgressIndicator(strokeWidth: 1.5),
             ),
             error: (error, stackTrace) => _LoginNavButton(
+              isCompact: isCompact,
               onTap: () => context.go('/login'),
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _PhoneNavMenu extends StatelessWidget {
+  const _PhoneNavMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: 'Menu',
+      icon: const Icon(Icons.menu, color: AppTheme.paper),
+      color: AppTheme.paper,
+      offset: const Offset(0, 46),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero,
+        side: BorderSide(color: AppTheme.ink),
+      ),
+      onSelected: context.go,
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: '/about', child: Text('ABOUT')),
+        PopupMenuItem(value: '/web/menu', child: Text('MENU')),
+        PopupMenuItem(value: '/info', child: Text('INFO')),
       ],
     );
   }
@@ -86,25 +123,31 @@ class _NavLink extends StatelessWidget {
 }
 
 class _LoginNavButton extends StatelessWidget {
-  const _LoginNavButton({required this.onTap});
+  const _LoginNavButton({required this.onTap, this.isCompact = false});
 
   final VoidCallback onTap;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: InkFrame(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 12 : 18,
+          vertical: isCompact ? 8 : 10,
+        ),
         backgroundColor: AppTheme.ink,
         borderColor: AppTheme.paper,
         cornerSize: 8,
-        child: Text(
-          'LOGIN',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppTheme.paper,
+        child: isCompact
+            ? const Icon(Icons.login, color: AppTheme.paper, size: 18)
+            : Text(
+                'LOGIN',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: AppTheme.paper),
               ),
-        ),
       ),
     );
   }
@@ -139,15 +182,9 @@ class _UserMenu extends ConsumerWidget {
         }
       },
       itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: _UserMenuAction.profile,
-          child: Text('Profile'),
-        ),
+        PopupMenuItem(value: _UserMenuAction.profile, child: Text('Profile')),
         PopupMenuDivider(),
-        PopupMenuItem(
-          value: _UserMenuAction.signOut,
-          child: Text('Log out'),
-        ),
+        PopupMenuItem(value: _UserMenuAction.signOut, child: Text('Log out')),
       ],
       child: InkFrame(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
@@ -156,9 +193,9 @@ class _UserMenu extends ConsumerWidget {
         cornerSize: 8,
         child: Text(
           'Hi, $name',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppTheme.paper,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(color: AppTheme.paper),
         ),
       ),
     );
@@ -185,7 +222,10 @@ class _RoleActionButton extends StatelessWidget {
 
 List<_RoleAction> _roleActionFor(AppUser user) {
   return switch (user.role) {
-    UserRole.manager => const [_RoleAction('DASHBOARD', '/staff/tables'), _RoleAction('TABLES LIST', '/staff/tables')],
+    UserRole.manager => const [
+      _RoleAction('DASHBOARD', '/staff/tables'),
+      _RoleAction('TABLES LIST', '/staff/tables'),
+    ],
     UserRole.staff => const [_RoleAction('TABLES LIST', '/staff/tables')],
     UserRole.kitchen => const [_RoleAction('KITCHEN', '/kitchen/orders')],
     UserRole.customer => const [],

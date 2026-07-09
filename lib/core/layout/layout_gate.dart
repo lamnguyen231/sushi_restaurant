@@ -14,12 +14,13 @@ class LayoutGate extends StatelessWidget {
   const LayoutGate.public({required this.child, super.key})
     : isAllowed = supportsPublicGuestLayout,
       title = 'Màn hình chưa được hỗ trợ',
-      message = 'Vui lòng dùng điện thoại dọc hoặc trình duyệt desktop.';
+      message = 'Giao diện đang được tối ưu cho kích thước màn hình này.';
 
   const LayoutGate.staff({required this.child, super.key})
     : isAllowed = supportsStaffLayout,
       title = 'Chế độ nhân viên cần màn hình ngang',
-      message = 'Vui lòng dùng tablet ngang hoặc trình duyệt desktop.';
+      message =
+          'Giao diện nhân viên đang được tối ưu cho kích thước màn hình này.';
 
   final bool Function(BuildContext context) isAllowed;
   final Widget child;
