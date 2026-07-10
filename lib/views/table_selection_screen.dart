@@ -12,6 +12,7 @@ import '../widgets/ink_frame.dart';
 import '../widgets/loading_view.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/sushi_nav_bar.dart';
+import '../core/providers/local_providers.dart';
 
 class TableSelectionScreen extends ConsumerWidget {
   const TableSelectionScreen({super.key});
@@ -98,7 +99,7 @@ class TableSelectionScreen extends ConsumerWidget {
     }
 
     try {
-      await ref
+      final session = await ref
           .read(tableSelectionViewModelProvider.notifier)
           .startSession(
             table,
@@ -106,6 +107,7 @@ class TableSelectionScreen extends ConsumerWidget {
           );
 
       if (!context.mounted) return;
+      ref.read(currentDiningSessionProvider.notifier).setSession(session);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đã mở phiên cho ${table.name}.')),
@@ -143,6 +145,7 @@ class TableSelectionScreen extends ConsumerWidget {
           .closeSession(sessionId);
 
       if (!context.mounted) return;
+      ref.read(currentDiningSessionProvider.notifier).clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đã kết thúc phiên của ${table.name}.')),

@@ -41,7 +41,7 @@ final class WebCartViewModelProvider
   }
 }
 
-String _$webCartViewModelHash() => r'98b2674ed79cd733f5b42376e64669f651d5b926';
+String _$webCartViewModelHash() => r'1651b915f731f12e5e26affdaf7e3c014882012f';
 
 abstract class _$WebCartViewModel extends $Notifier<WebCartState> {
   WebCartState build();
