@@ -21,8 +21,9 @@ class FirestoreOrderRepository implements OrderRepository {
 
   @override
   Stream<List<RestaurantOrder>> watchSessionOrders(String sessionId) {
-    // TODO: Add session-specific order listener in FirestoreOrderService.
-    return const Stream.empty();
+    return _orderService.watchSessionOrders(sessionId).map(
+      (snapshot) => snapshot.docs.map(_fromDoc).toList(),
+    );
   }
 
   @override

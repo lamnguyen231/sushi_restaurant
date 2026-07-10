@@ -19,4 +19,12 @@ class FirestoreOrderService {
   ) {
     return _firestore.collection('orders').add(data);
   }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> watchSessionOrders(String sessionId) {
+    return _firestore
+        .collection('orders')
+        .where('sessionId', isEqualTo: sessionId)
+        .orderBy('createdAt')
+        .snapshots();
+  }
 }
