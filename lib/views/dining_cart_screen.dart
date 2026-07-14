@@ -20,11 +20,14 @@ class DiningCartScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(currentDiningSessionProvider);
-    
+
     if (session == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Giỏ hàng tại bàn')),
-        body: const EmptyStateView(message: 'Không tìm thấy phiên làm việc. Hãy yêu cầu nhân viên mở bàn.'),
+        body: const EmptyStateView(
+          message:
+              'Không tìm thấy phiên làm việc. Hãy yêu cầu nhân viên mở bàn.',
+        ),
       );
     }
 
@@ -40,12 +43,15 @@ class DiningCartScreen extends ConsumerWidget {
       ),
       body: cartAsync.when(
         loading: () => const LoadingView(message: 'Đang tải giỏ hàng...'),
-        error: (error, stack) => ErrorView(message: 'Lỗi tải giỏ hàng: $error'),
+        error: (error, stack) =>
+            ErrorView(message: 'Lỗi tải giỏ hàng: $error'),
         data: (state) {
           if (state.items.isEmpty) {
-            return const EmptyStateView(message: 'Giỏ hàng đang trống. Hãy chọn món thêm nhé!');
+            return const EmptyStateView(
+              message: 'Giỏ hàng đang trống. Hãy chọn món thêm nhé!',
+            );
           }
-          
+
           return Column(
             children: [
               Expanded(
@@ -55,17 +61,15 @@ class DiningCartScreen extends ConsumerWidget {
                   separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, index) {
                     final item = state.items[index];
-                    return _CartItemTile(
-                      item: item,
-                      sessionId: session.id,
-                    );
+                    return _CartItemTile(item: item, sessionId: session.id);
                   },
                 ),
               ),
               _CheckoutBottomBar(
                 totalQuantity: state.totalQuantity,
                 totalPrice: state.totalPrice,
-                onCheckout: () => _submitOrder(context, ref, state, session),
+                onCheckout: () =>
+                    _submitOrder(context, ref, state, session),
               ),
             ],
           );
@@ -74,20 +78,33 @@ class DiningCartScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _submitOrder(BuildContext context, WidgetRef ref, DiningCartState state, DiningSession session) async {
+  /// P3-01: Chuyển cart items (đã snapshot price từ SQLite) lên Firestore.
+  Future<void> _submitOrder(
+    BuildContext context,
+    WidgetRef ref,
+    DiningCartState state,
+    DiningSession session,
+  ) async {
     final repo = ref.read(orderRepositoryProvider);
-    
-    final cartItems = state.items.map<CartItem>((i) => CartItem(
-      id: null,
-      sessionId: session.id,
-      productId: i.product.id,
-      name: i.product.name,
-      unitPrice: i.product.price,
-      quantity: i.localItem.quantity,
-      lineTotal: i.product.price * i.localItem.quantity,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    )).toList();
+
+    // P3-02: name và unitPrice đã được snapshot vào LocalCartItem lúc thêm món.
+    // P3-03: lineTotal tính lại từ unitPrice * quantity trong getter.
+    final cartItems = state.items
+        .map<CartItem>(
+          (i) => CartItem(
+            id: null,
+            sessionId: session.id,
+            productId: i.localItem.productId,
+            name: i.localItem.name,             // snapshot từ SQLite
+            unitPrice: i.localItem.unitPrice,   // snapshot từ SQLite
+            quantity: i.localItem.quantity,
+            lineTotal: i.localItem.lineTotal,   // tính lại từ getter
+            note: i.localItem.notes,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        )
+        .toList();
 
     try {
       await repo.placeDineInOrder(
@@ -96,9 +113,11 @@ class DiningCartScreen extends ConsumerWidget {
         tableName: session.tableName,
         cartItems: cartItems,
       );
-      
-      await ref.read(diningCartViewModelProvider(session.id).notifier).clearCart();
-      
+
+      await ref
+          .read(diningCartViewModelProvider(session.id).notifier)
+          .clearCart();
+
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đã gửi order xuống bếp!')),
@@ -122,24 +141,23 @@ class _CartItemTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    final product = item.product;
-    final qty = item.localItem.quantity;
-    
+    final localItem = item.localItem;
+    final qty = localItem.quantity;
+
     return Row(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            product.imageUrl ?? '',
-            width: 80,
-            height: 80,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              width: 80,
-              height: 80,
-              color: AppTheme.rice,
-              child: const Icon(Icons.image_not_supported, color: AppTheme.mutedInk),
-            ),
+        // Placeholder avatar vì LocalCartItem không lưu imageUrl
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: AppTheme.rice,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.set_meal,
+            color: AppTheme.mutedInk,
+            size: 36,
           ),
         ),
         const SizedBox(width: 16),
@@ -147,12 +165,27 @@ class _CartItemTile extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(product.name, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                item.name, // snapshot từ SQLite
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 4),
               Text(
-                formatCurrency.format(product.price),
-                style: const TextStyle(color: AppTheme.vermilion, fontWeight: FontWeight.bold),
+                formatCurrency.format(item.unitPrice), // snapshot từ SQLite
+                style: const TextStyle(
+                  color: AppTheme.vermilion,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+              if (localItem.notes != null && localItem.notes!.isNotEmpty)
+                Text(
+                  'Ghi chú: ${localItem.notes}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.mutedInk,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
             ],
           ),
         ),
@@ -161,18 +194,25 @@ class _CartItemTile extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.remove_circle_outline),
               onPressed: () {
-                ref.read(diningCartViewModelProvider(sessionId).notifier).updateQuantity(product.id, qty - 1);
+                ref
+                    .read(diningCartViewModelProvider(sessionId).notifier)
+                    .updateQuantity(localItem.productId, qty - 1);
               },
             ),
-            Text('$qty', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              '$qty',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             IconButton(
               icon: const Icon(Icons.add_circle_outline),
               onPressed: () {
-                ref.read(diningCartViewModelProvider(sessionId).notifier).updateQuantity(product.id, qty + 1);
+                ref
+                    .read(diningCartViewModelProvider(sessionId).notifier)
+                    .updateQuantity(localItem.productId, qty + 1);
               },
             ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -192,12 +232,12 @@ class _CheckoutBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
         color: AppTheme.paper,
-        border: const Border(top: BorderSide(color: AppTheme.rice)),
+        border: Border(top: BorderSide(color: AppTheme.rice)),
       ),
       child: SafeArea(
         child: Column(
@@ -208,7 +248,11 @@ class _CheckoutBottomBar extends StatelessWidget {
                 const Text('Tổng tiền tạm tính:', style: TextStyle(fontSize: 16)),
                 Text(
                   formatCurrency.format(totalPrice),
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.vermilion),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.vermilion,
+                  ),
                 ),
               ],
             ),
