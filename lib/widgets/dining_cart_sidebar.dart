@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../core/providers/firebase_providers.dart';
-import '../core/providers/local_providers.dart';
 import '../core/theme/app_theme.dart';
 import '../models/cart_item.dart';
 import '../models/dining_session.dart';
 import '../models/order_item.dart';
 import '../viewmodels/dining_cart_view_model.dart';
-import 'empty_state_view.dart';
 import 'error_view.dart';
 import 'loading_view.dart';
 import 'primary_button.dart';
@@ -177,14 +175,16 @@ class DiningCartSidebar extends ConsumerWidget {
   Future<void> _submitOrder(BuildContext context, WidgetRef ref, DiningCartState state, DiningSession session) async {
     final repo = ref.read(orderRepositoryProvider);
     
+    // P3-01/P3-02: Dùng name, unitPrice, lineTotal đã snapshot vào LocalCartItem
     final cartItems = state.items.map<CartItem>((i) => CartItem(
       id: null,
       sessionId: session.id,
-      productId: i.product.id,
-      name: i.product.name,
-      unitPrice: i.product.price,
+      productId: i.localItem.productId,
+      name: i.localItem.name,           // snapshot từ SQLite
+      unitPrice: i.localItem.unitPrice, // snapshot từ SQLite
       quantity: i.localItem.quantity,
-      lineTotal: i.product.price * i.localItem.quantity,
+      lineTotal: i.localItem.lineTotal, // tính lại từ getter
+      note: i.localItem.notes,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     )).toList();
@@ -274,52 +274,55 @@ class _SidebarCartItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    final product = item.product;
-    final qty = item.localItem.quantity;
-    
+    // P3-02: Dùng name và unitPrice đã snapshot trong LocalCartItem
+    final localItem = item.localItem;
+    final qty = localItem.quantity;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            product.imageUrl ?? '',
-            width: 60,
-            height: 60,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              width: 60,
-              height: 60,
-              color: AppTheme.rice,
-              child: const Icon(Icons.image_not_supported, color: AppTheme.mutedInk, size: 24),
-            ),
+        // Placeholder icon vì LocalCartItem không lưu imageUrl
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: AppTheme.rice,
+            borderRadius: BorderRadius.circular(8),
           ),
+          child: const Icon(Icons.set_meal, color: AppTheme.mutedInk, size: 28),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Text(
-                formatCurrency.format(product.price),
+                formatCurrency.format(item.unitPrice),
                 style: const TextStyle(color: AppTheme.vermilion, fontSize: 13),
               ),
+              if (localItem.notes != null && localItem.notes!.isNotEmpty)
+                Text(
+                  localItem.notes!,
+                  style: const TextStyle(color: Colors.grey, fontSize: 11, fontStyle: FontStyle.italic),
+                ),
             ],
           ),
         ),
         Row(
           children: [
             InkWell(
-              onTap: () => ref.read(diningCartViewModelProvider(sessionId).notifier).updateQuantity(product.id, qty - 1),
+              onTap: () => ref.read(diningCartViewModelProvider(sessionId).notifier)
+                  .updateQuantity(localItem.productId, qty - 1),
               child: const Icon(Icons.remove_circle_outline, size: 24, color: Colors.grey),
             ),
             const SizedBox(width: 12),
             Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(width: 12),
             InkWell(
-              onTap: () => ref.read(diningCartViewModelProvider(sessionId).notifier).updateQuantity(product.id, qty + 1),
+              onTap: () => ref.read(diningCartViewModelProvider(sessionId).notifier)
+                  .updateQuantity(localItem.productId, qty + 1),
               child: const Icon(Icons.add_circle_outline, size: 24, color: AppTheme.vermilion),
             ),
           ],

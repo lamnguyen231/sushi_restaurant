@@ -26,6 +26,11 @@ class FirestoreOrderRepository implements OrderRepository {
     );
   }
 
+  /// P3-01: Chuyển cart items từ SQLite thành Firestore order.
+  /// P3-02: name và unitPrice được snapshot từ CartItem (đã lấy từ SQLite).
+  /// P3-03: subtotal và grandTotal được tính lại trong repository,
+  ///        không dùng giá trị do client truyền lên.
+  /// P3-04: idempotencyKey dùng format sessionId_microseconds để đảm bảo unique.
   @override
   Future<RestaurantOrder> placeDineInOrder({
     required String sessionId,
@@ -33,23 +38,29 @@ class FirestoreOrderRepository implements OrderRepository {
     required String tableName,
     required List<CartItem> cartItems,
   }) async {
+    // P3-02: Snapshot tên và giá tại thời điểm đặt từ CartItem (đã snapshot từ SQLite)
     final orderItems = cartItems
         .map(
           (item) => OrderItem(
             productId: item.productId,
-            productName: item.name,
-            unitPrice: item.unitPrice,
+            productName: item.name,      // snapshot từ local_cart.name
+            unitPrice: item.unitPrice,   // snapshot từ local_cart.unit_price
             quantity: item.quantity,
             note: item.note,
-            lineTotal: item.lineTotal,
+            lineTotal: item.unitPrice * item.quantity, // P3-03: tính lại, không trust client
           ),
         )
         .toList();
+
+    // P3-03: Tính lại subtotal từ lineTotal từng item — không trust giá trị client
     final subtotal = orderItems.fold<double>(
       0,
       (total, item) => total + item.lineTotal,
     );
-    final idempotencyKey = '${sessionId}_${DateTime.now().microsecondsSinceEpoch}';
+
+    // P3-04: idempotencyKey: sessionId + microsecond timestamp → đủ unique trong session
+    final idempotencyKey =
+        '${sessionId}_${DateTime.now().microsecondsSinceEpoch}';
     final now = DateTime.now();
 
     final doc = await _orderService.createOrder({
@@ -62,7 +73,7 @@ class FirestoreOrderRepository implements OrderRepository {
       'subtotal': subtotal,
       'deliveryFee': 0,
       'discount': 0,
-      'grandTotal': subtotal,
+      'grandTotal': subtotal, // P3-03: grandTotal = subtotal (no fee for dine-in)
       'status': DineInOrderStatus.pending.name,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -92,10 +103,13 @@ class FirestoreOrderRepository implements OrderRepository {
     required String orderId,
     required String status,
   }) async {
-    // TODO: Add update method to FirestoreOrderService when kitchen flow starts.
+    // P3-09: Implement kitchen status update
+    await _orderService.updateOrderStatus(orderId: orderId, status: status);
   }
 
-  RestaurantOrder _fromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+  RestaurantOrder _fromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final data = doc.data();
     final itemsData = data['items'] as List<dynamic>? ?? const [];
     final items = itemsData
@@ -112,10 +126,33 @@ class FirestoreOrderRepository implements OrderRepository {
         )
         .toList();
 
+    // Parse status từ string Firestore sang enum
+    final statusStr = data['status'] as String? ?? 'pending';
+    final status = DineInOrderStatus.values.firstWhere(
+      (e) => e.name == statusStr,
+      orElse: () => DineInOrderStatus.pending,
+    );
+
+    // Parse timestamps
+    final createdAtTs = data['createdAt'];
+    final updatedAtTs = data['updatedAt'];
+    final createdAt = createdAtTs is Timestamp
+        ? createdAtTs.toDate()
+        : DateTime.now();
+    final updatedAt = updatedAtTs is Timestamp
+        ? updatedAtTs.toDate()
+        : DateTime.now();
+
     return RestaurantOrder(
       id: doc.id,
-      source: OrderSource.tableDevice,
-      orderType: OrderType.dineIn,
+      source: OrderSource.values.firstWhere(
+        (e) => e.name == (data['source'] as String? ?? 'tableDevice'),
+        orElse: () => OrderSource.tableDevice,
+      ),
+      orderType: OrderType.values.firstWhere(
+        (e) => e.name == (data['orderType'] as String? ?? 'dineIn'),
+        orElse: () => OrderType.dineIn,
+      ),
       sessionId: data['sessionId'] as String?,
       tableId: data['tableId'] as String?,
       tableName: data['tableName'] as String?,
@@ -124,9 +161,9 @@ class FirestoreOrderRepository implements OrderRepository {
       deliveryFee: (data['deliveryFee'] as num? ?? 0).toDouble(),
       discount: (data['discount'] as num? ?? 0).toDouble(),
       grandTotal: (data['grandTotal'] as num? ?? 0).toDouble(),
-      status: DineInOrderStatus.pending,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+      status: status,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
       createdBy: data['createdBy'] as String?,
       idempotencyKey: data['idempotencyKey'] as String? ?? doc.id,
     );
