@@ -25,6 +25,7 @@ import '../../services/firestore_product_service.dart';
 import '../../services/firestore_reservation_service.dart';
 import '../../services/firestore_table_service.dart';
 import '../../models/app_user.dart';
+import 'local_providers.dart';
 
 part 'firebase_providers.g.dart';
 
@@ -100,7 +101,10 @@ ProductRepository productRepository(Ref ref) {
 
 @riverpod
 OrderRepository orderRepository(Ref ref) {
-  return FirestoreOrderRepository(ref.watch(firestoreOrderServiceProvider));
+  return FirestoreOrderRepository(
+    ref.watch(firestoreOrderServiceProvider),
+    ref.watch(localPendingOrderRepositoryProvider),
+  );
 }
 
 @riverpod

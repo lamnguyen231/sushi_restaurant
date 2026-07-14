@@ -157,3 +157,97 @@ abstract class _$CurrentDiningSession extends $Notifier<DiningSession?> {
     element.handleValue(ref, created);
   }
 }
+
+@ProviderFor(sqlitePendingOrderService)
+const sqlitePendingOrderServiceProvider = SqlitePendingOrderServiceProvider._();
+
+final class SqlitePendingOrderServiceProvider
+    extends
+        $FunctionalProvider<
+          SqlitePendingOrderService,
+          SqlitePendingOrderService,
+          SqlitePendingOrderService
+        >
+    with $Provider<SqlitePendingOrderService> {
+  const SqlitePendingOrderServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sqlitePendingOrderServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sqlitePendingOrderServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<SqlitePendingOrderService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SqlitePendingOrderService create(Ref ref) {
+    return sqlitePendingOrderService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SqlitePendingOrderService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SqlitePendingOrderService>(value),
+    );
+  }
+}
+
+String _$sqlitePendingOrderServiceHash() => r'dummyhashservice';
+
+@ProviderFor(localPendingOrderRepository)
+const localPendingOrderRepositoryProvider = LocalPendingOrderRepositoryProvider._();
+
+final class LocalPendingOrderRepositoryProvider
+    extends
+        $FunctionalProvider<
+          LocalPendingOrderRepository,
+          LocalPendingOrderRepository,
+          LocalPendingOrderRepository
+        >
+    with $Provider<LocalPendingOrderRepository> {
+  const LocalPendingOrderRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'localPendingOrderRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$localPendingOrderRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<LocalPendingOrderRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  LocalPendingOrderRepository create(Ref ref) {
+    return localPendingOrderRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(LocalPendingOrderRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<LocalPendingOrderRepository>(value),
+    );
+  }
+}
+
+String _$localPendingOrderRepositoryHash() => r'dummyhashrepo';

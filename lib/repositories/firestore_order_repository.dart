@@ -4,13 +4,16 @@ import '../core/enums/app_enums.dart';
 import '../models/cart_item.dart';
 import '../models/order_item.dart';
 import '../models/restaurant_order.dart';
+import '../models/pending_order.dart';
 import '../services/firestore_order_service.dart';
 import 'order_repository.dart';
+import 'local_pending_order_repository.dart';
 
 class FirestoreOrderRepository implements OrderRepository {
-  const FirestoreOrderRepository(this._orderService);
+  const FirestoreOrderRepository(this._orderService, this._localPendingRepo);
 
   final FirestoreOrderService _orderService;
+  final LocalPendingOrderRepository _localPendingRepo;
 
   @override
   Stream<List<RestaurantOrder>> watchKitchenOrders() {
@@ -31,6 +34,8 @@ class FirestoreOrderRepository implements OrderRepository {
   /// P3-03: subtotal và grandTotal được tính lại trong repository,
   ///        không dùng giá trị do client truyền lên.
   /// P3-04: idempotencyKey dùng format sessionId_microseconds để đảm bảo unique.
+  /// P3-05: Lưu pending order vào SQLite trước khi đồng bộ.
+  /// P3-06: Tự động cập nhật trạng thái lỗi nếu offline để chờ background sync.
   @override
   Future<RestaurantOrder> placeDineInOrder({
     required String sessionId,
@@ -38,7 +43,11 @@ class FirestoreOrderRepository implements OrderRepository {
     required String tableName,
     required List<CartItem> cartItems,
   }) async {
-    // P3-02: Snapshot tên và giá tại thời điểm đặt từ CartItem (đã snapshot từ SQLite)
+    final localId = 'local_${sessionId}_${DateTime.now().microsecondsSinceEpoch}';
+    final idempotencyKey =
+        '${sessionId}_${DateTime.now().microsecondsSinceEpoch}';
+    final now = DateTime.now();
+
     final orderItems = cartItems
         .map(
           (item) => OrderItem(
@@ -52,50 +61,93 @@ class FirestoreOrderRepository implements OrderRepository {
         )
         .toList();
 
-    // P3-03: Tính lại subtotal từ lineTotal từng item — không trust giá trị client
     final subtotal = orderItems.fold<double>(
       0,
       (total, item) => total + item.lineTotal,
     );
 
-    // P3-04: idempotencyKey: sessionId + microsecond timestamp → đủ unique trong session
-    final idempotencyKey =
-        '${sessionId}_${DateTime.now().microsecondsSinceEpoch}';
-    final now = DateTime.now();
+    // P3-05: Lưu vào SQLite pending_orders & pending_order_items (CRUD Create)
+    final pendingItems = orderItems.map((item) => PendingOrderItem(
+      orderId: localId,
+      productId: item.productId,
+      name: item.productName,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      note: item.note,
+      lineTotal: item.lineTotal,
+    )).toList();
 
-    final doc = await _orderService.createOrder({
-      'source': OrderSource.tableDevice.name,
-      'orderType': OrderType.dineIn.name,
-      'sessionId': sessionId,
-      'tableId': tableId,
-      'tableName': tableName,
-      'items': orderItems.map(_orderItemToMap).toList(),
-      'subtotal': subtotal,
-      'deliveryFee': 0,
-      'discount': 0,
-      'grandTotal': subtotal, // P3-03: grandTotal = subtotal (no fee for dine-in)
-      'status': DineInOrderStatus.pending.name,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-      'idempotencyKey': idempotencyKey,
-    });
-
-    return RestaurantOrder(
-      id: doc.id,
-      source: OrderSource.tableDevice,
-      orderType: OrderType.dineIn,
+    final pendingOrder = PendingOrder(
+      localId: localId,
+      idempotencyKey: idempotencyKey,
       sessionId: sessionId,
       tableId: tableId,
-      tableName: tableName,
-      items: orderItems,
-      subtotal: subtotal,
-      discount: 0,
-      grandTotal: subtotal,
-      status: DineInOrderStatus.pending,
+      status: SyncStatus.localOnly,
       createdAt: now,
       updatedAt: now,
-      idempotencyKey: idempotencyKey,
+      items: pendingItems,
     );
+
+    await _localPendingRepo.saveOrder(pendingOrder);
+
+    try {
+      // Đặt status sang syncing
+      await _localPendingRepo.updateStatus(
+        localId: localId,
+        status: SyncStatus.syncing.name,
+      );
+
+      final doc = await _orderService.createOrder({
+        'source': OrderSource.tableDevice.name,
+        'orderType': OrderType.dineIn.name,
+        'sessionId': sessionId,
+        'tableId': tableId,
+        'tableName': tableName,
+        'items': orderItems.map(_orderItemToMap).toList(),
+        'subtotal': subtotal,
+        'deliveryFee': 0,
+        'discount': 0,
+        'grandTotal': subtotal, // P3-03: grandTotal = subtotal (no fee for dine-in)
+        'status': DineInOrderStatus.pending.name,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'idempotencyKey': idempotencyKey,
+      });
+
+      // P3-05: Cập nhật status thành synced (CRUD Update)
+      await _localPendingRepo.updateStatus(
+        localId: localId,
+        status: SyncStatus.synced.name,
+        remoteOrderId: doc.id,
+        syncedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      return RestaurantOrder(
+        id: doc.id,
+        source: OrderSource.tableDevice,
+        orderType: OrderType.dineIn,
+        sessionId: sessionId,
+        tableId: tableId,
+        tableName: tableName,
+        items: orderItems,
+        subtotal: subtotal,
+        discount: 0,
+        grandTotal: subtotal,
+        status: DineInOrderStatus.pending,
+        createdAt: now,
+        updatedAt: now,
+        idempotencyKey: idempotencyKey,
+      );
+    } catch (e) {
+      // P3-06: Đánh dấu lỗi để hệ thống đồng bộ lại khi có kết nối
+      await _localPendingRepo.updateStatus(
+        localId: localId,
+        status: SyncStatus.failed.name,
+        lastError: e.toString(),
+      );
+
+      throw 'Mạng yếu. Đơn hàng đã được lưu offline và sẽ tự động gửi khi có mạng!';
+    }
   }
 
   @override
