@@ -19,6 +19,8 @@ class RestaurantOrder {
     this.tableName,
     this.createdBy,
     this.deliveryFee = 0,
+    this.customerName,
+    this.customerPhone,
   });
 
   final String id;
@@ -37,4 +39,6 @@ class RestaurantOrder {
   final DateTime updatedAt;
   final String? createdBy;
   final String idempotencyKey;
+  final String? customerName;
+  final String? customerPhone;
 }

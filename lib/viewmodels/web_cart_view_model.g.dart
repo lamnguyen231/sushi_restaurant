@@ -20,7 +20,7 @@ final class WebCartViewModelProvider
         argument: null,
         retry: null,
         name: r'webCartViewModelProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -41,7 +41,7 @@ final class WebCartViewModelProvider
   }
 }
 
-String _$webCartViewModelHash() => r'1651b915f731f12e5e26affdaf7e3c014882012f';
+String _$webCartViewModelHash() => r'1aeb4f969c87368be648faf4d95af71be248f354';
 
 abstract class _$WebCartViewModel extends $Notifier<WebCartState> {
   WebCartState build();

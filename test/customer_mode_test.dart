@@ -9,6 +9,7 @@ import 'package:sushi_restaurant/models/app_user.dart';
 import 'package:sushi_restaurant/models/cart_item.dart';
 import 'package:sushi_restaurant/models/dining_session.dart';
 import 'package:sushi_restaurant/models/restaurant_order.dart';
+import 'package:sushi_restaurant/models/order_item.dart';
 import 'package:sushi_restaurant/models/sushi_product.dart';
 import 'package:sushi_restaurant/repositories/auth_repository.dart';
 import 'package:sushi_restaurant/repositories/dining_session_repository.dart';
@@ -237,6 +238,18 @@ class _OrderRepo implements OrderRepository {
     required String tableId,
     required String tableName,
     required List<CartItem> cartItems,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<RestaurantOrder> placeWebPickupOrder({
+    required String customerName,
+    required String customerPhone,
+    required String pickupTime,
+    required String? note,
+    required List<OrderItem> items,
+    String? createdBy,
   }) {
     throw UnimplementedError();
   }

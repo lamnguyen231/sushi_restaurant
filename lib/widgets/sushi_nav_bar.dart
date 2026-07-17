@@ -38,12 +38,14 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
             itemBuilder: (context) => [
               const PopupMenuItem(value: '/about', child: Text('ABOUT')),
               const PopupMenuItem(value: '/web/menu', child: Text('MENU')),
+              const PopupMenuItem(value: '/web/reservation', child: Text('RESERVATION')),
               const PopupMenuItem(value: '/info', child: Text('INFO')),
             ],
           )
         else ...[
           _NavLink(label: 'ABOUT', onTap: () => context.go('/about')),
           _NavLink(label: 'MENU', onTap: () => context.go('/web/menu')),
+          _NavLink(label: 'RESERVATION', onTap: () => context.go('/web/reservation')),
           _NavLink(label: 'INFO', onTap: () => context.go('/info')),
         ],
         // Cart icon with badge
