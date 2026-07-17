@@ -13,6 +13,7 @@ import '../widgets/empty_state_view.dart';
 import '../widgets/error_view.dart';
 import '../widgets/loading_view.dart';
 import '../widgets/primary_button.dart';
+import '../widgets/staff_session_unlock_button.dart';
 
 class DiningCartScreen extends ConsumerWidget {
   const DiningCartScreen({super.key});
@@ -33,47 +34,59 @@ class DiningCartScreen extends ConsumerWidget {
 
     final cartAsync = ref.watch(diningCartViewModelProvider(session.id));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('GIỎ HÀNG TẠM'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dining/menu'),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('GIỎ HÀNG TẠM'),
+          automaticallyImplyLeading: false,
+          actions: [
+            TextButton.icon(
+              onPressed: () => context.go('/dining/menu'),
+              icon: const Icon(Icons.restaurant_menu),
+              label: const Text('Menu'),
+            ),
+            TextButton.icon(
+              onPressed: () => context.go('/dining/orders'),
+              icon: const Icon(Icons.receipt_long),
+              label: const Text('Đã gọi'),
+            ),
+            StaffSessionUnlockButton(session: session),
+          ],
         ),
-      ),
-      body: cartAsync.when(
-        loading: () => const LoadingView(message: 'Đang tải giỏ hàng...'),
-        error: (error, stack) =>
-            ErrorView(message: 'Lỗi tải giỏ hàng: $error'),
-        data: (state) {
-          if (state.items.isEmpty) {
-            return const EmptyStateView(
-              message: 'Giỏ hàng đang trống. Hãy chọn món thêm nhé!',
-            );
-          }
+        body: cartAsync.when(
+          loading: () => const LoadingView(message: 'Đang tải giỏ hàng...'),
+          error: (error, stack) =>
+              ErrorView(message: 'Lỗi tải giỏ hàng: $error'),
+          data: (state) {
+            if (state.items.isEmpty) {
+              return const EmptyStateView(
+                message: 'Giỏ hàng đang trống. Hãy chọn món thêm nhé!',
+              );
+            }
 
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: state.items.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final item = state.items[index];
-                    return _CartItemTile(item: item, sessionId: session.id);
-                  },
+            return Column(
+              children: [
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(24),
+                    itemCount: state.items.length,
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final item = state.items[index];
+                      return _CartItemTile(item: item, sessionId: session.id);
+                    },
+                  ),
                 ),
-              ),
-              _CheckoutBottomBar(
-                totalQuantity: state.totalQuantity,
-                totalPrice: state.totalPrice,
-                onCheckout: () =>
-                    _submitOrder(context, ref, state, session),
-              ),
-            ],
-          );
-        },
+                _CheckoutBottomBar(
+                  totalQuantity: state.totalQuantity,
+                  totalPrice: state.totalPrice,
+                  onCheckout: () => _submitOrder(context, ref, state, session),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -95,10 +108,10 @@ class DiningCartScreen extends ConsumerWidget {
             id: null,
             sessionId: session.id,
             productId: i.localItem.productId,
-            name: i.localItem.name,             // snapshot từ SQLite
-            unitPrice: i.localItem.unitPrice,   // snapshot từ SQLite
+            name: i.localItem.name, // snapshot từ SQLite
+            unitPrice: i.localItem.unitPrice, // snapshot từ SQLite
             quantity: i.localItem.quantity,
-            lineTotal: i.localItem.lineTotal,   // tính lại từ getter
+            lineTotal: i.localItem.lineTotal, // tính lại từ getter
             note: i.localItem.notes,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
@@ -119,15 +132,15 @@ class DiningCartScreen extends ConsumerWidget {
           .clearCart();
 
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã gửi order xuống bếp!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đã gửi order xuống bếp!')));
       context.go('/dining/orders');
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi gửi order: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi gửi order: $e')));
     }
   }
 }
@@ -154,11 +167,7 @@ class _CartItemTile extends ConsumerWidget {
             color: AppTheme.rice,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(
-            Icons.set_meal,
-            color: AppTheme.mutedInk,
-            size: 36,
-          ),
+          child: const Icon(Icons.set_meal, color: AppTheme.mutedInk, size: 36),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -245,7 +254,10 @@ class _CheckoutBottomBar extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Tổng tiền tạm tính:', style: TextStyle(fontSize: 16)),
+                const Text(
+                  'Tổng tiền tạm tính:',
+                  style: TextStyle(fontSize: 16),
+                ),
                 Text(
                   formatCurrency.format(totalPrice),
                   style: const TextStyle(
