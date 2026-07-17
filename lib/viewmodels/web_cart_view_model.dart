@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/sushi_product.dart';
 
@@ -18,6 +20,22 @@ class WebCartItem {
   final String? note;
 
   double get lineTotal => product.price * quantity;
+
+  factory WebCartItem.fromJson(Map<String, dynamic> json) {
+    return WebCartItem(
+      product: SushiProduct.fromJson(json['product'] as Map<String, dynamic>),
+      quantity: json['quantity'] as int? ?? 1,
+      note: json['note'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product': product.toJson(),
+      'quantity': quantity,
+      'note': note,
+    };
+  }
 
   WebCartItem copyWith({int? quantity, String? note}) {
     return WebCartItem(
@@ -50,8 +68,39 @@ class WebCartState {
 
 @riverpod
 class WebCartViewModel extends _$WebCartViewModel {
+  static const _storageKey = 'web_cart_items';
+
   @override
-  WebCartState build() => const WebCartState();
+  WebCartState build() {
+    _loadCart();
+    return const WebCartState();
+  }
+
+  Future<void> _loadCart() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_storageKey);
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final List<dynamic> decoded = json.decode(jsonStr);
+        final items = decoded
+            .map((item) => WebCartItem.fromJson(item as Map<String, dynamic>))
+            .toList();
+        state = WebCartState(items: items);
+      }
+    } catch (_) {
+      // Keep state as is if load fails
+    }
+  }
+
+  Future<void> _saveCart() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = json.encode(state.items.map((i) => i.toJson()).toList());
+      await prefs.setString(_storageKey, jsonStr);
+    } catch (_) {
+      // Fail silently
+    }
+  }
 
   /// Thêm sản phẩm vào giỏ. Nếu đã có cùng [note] thì tăng số lượng thêm [qty].
   void addItem(SushiProduct product, {int qty = 1, String? note}) {
@@ -69,6 +118,7 @@ class WebCartViewModel extends _$WebCartViewModel {
         items: [...state.items, WebCartItem(product: product, quantity: qty, note: note)],
       );
     }
+    _saveCart();
   }
 
   /// Cập nhật số lượng. Sử dụng index hoặc (productId + note) để tìm đúng item.
@@ -86,6 +136,7 @@ class WebCartViewModel extends _$WebCartViewModel {
       return i;
     }).toList();
     state = state.copyWith(items: updated);
+    _saveCart();
   }
 
   /// Xóa sản phẩm khỏi giỏ.
@@ -95,10 +146,12 @@ class WebCartViewModel extends _$WebCartViewModel {
           .where((i) => !(i.product.id == productId && i.note == note))
           .toList(),
     );
+    _saveCart();
   }
 
   /// Xóa toàn bộ giỏ hàng.
   void clearCart() {
     state = const WebCartState();
+    _saveCart();
   }
 }
