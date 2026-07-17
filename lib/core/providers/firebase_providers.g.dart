@@ -647,7 +647,7 @@ final class OrderRepositoryProvider
   }
 }
 
-String _$orderRepositoryHash() => r'8f0d451d37e2d524df0a37fd7c1cf8fb9e2384e9';
+String _$orderRepositoryHash() => r'e8933d6f8a5103b7e19dac6a8a387fbba9fa634a';
 
 @ProviderFor(tableRepository)
 const tableRepositoryProvider = TableRepositoryProvider._();

@@ -66,13 +66,14 @@ class WebCartState {
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 
-@riverpod
+@Riverpod(keepAlive: true)
 class WebCartViewModel extends _$WebCartViewModel {
   static const _storageKey = 'web_cart_items';
+  Future<void>? _loadFuture;
 
   @override
   WebCartState build() {
-    _loadCart();
+    _loadFuture = _loadCart();
     return const WebCartState();
   }
 
@@ -103,7 +104,8 @@ class WebCartViewModel extends _$WebCartViewModel {
   }
 
   /// Thêm sản phẩm vào giỏ. Nếu đã có cùng [note] thì tăng số lượng thêm [qty].
-  void addItem(SushiProduct product, {int qty = 1, String? note}) {
+  Future<void> addItem(SushiProduct product, {int qty = 1, String? note}) async {
+    await _loadFuture;
     final existing = state.items.indexWhere(
       (i) => i.product.id == product.id && i.note == note,
     );
@@ -118,15 +120,16 @@ class WebCartViewModel extends _$WebCartViewModel {
         items: [...state.items, WebCartItem(product: product, quantity: qty, note: note)],
       );
     }
-    _saveCart();
+    await _saveCart();
   }
 
   /// Cập nhật số lượng. Sử dụng index hoặc (productId + note) để tìm đúng item.
   /// Tuy nhiên do UI hiện tại chỉ xoá/cập nhật theo ID, ta sẽ cập nhật tất cả item có cùng productId.
   /// (Tốt nhất là cập nhật theo index hoặc ID duy nhất của cart item)
-  void updateQuantity(String productId, int quantity, {String? note}) {
+  Future<void> updateQuantity(String productId, int quantity, {String? note}) async {
+    await _loadFuture;
     if (quantity <= 0) {
-      removeItem(productId, note: note);
+      await removeItem(productId, note: note);
       return;
     }
     final updated = state.items.map((i) {
@@ -136,22 +139,24 @@ class WebCartViewModel extends _$WebCartViewModel {
       return i;
     }).toList();
     state = state.copyWith(items: updated);
-    _saveCart();
+    await _saveCart();
   }
 
   /// Xóa sản phẩm khỏi giỏ.
-  void removeItem(String productId, {String? note}) {
+  Future<void> removeItem(String productId, {String? note}) async {
+    await _loadFuture;
     state = state.copyWith(
       items: state.items
           .where((i) => !(i.product.id == productId && i.note == note))
           .toList(),
     );
-    _saveCart();
+    await _saveCart();
   }
 
   /// Xóa toàn bộ giỏ hàng.
-  void clearCart() {
+  Future<void> clearCart() async {
+    await _loadFuture;
     state = const WebCartState();
-    _saveCart();
+    await _saveCart();
   }
 }
