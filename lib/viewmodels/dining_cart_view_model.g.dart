@@ -8,9 +8,12 @@ part of 'dining_cart_view_model.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// P3-11: Provider expose danh sách order đã gửi trong session (Firestore realtime).
 
 @ProviderFor(sessionPlacedOrders)
 const sessionPlacedOrdersProvider = SessionPlacedOrdersFamily._();
+
+/// P3-11: Provider expose danh sách order đã gửi trong session (Firestore realtime).
 
 final class SessionPlacedOrdersProvider
     extends
@@ -22,6 +25,7 @@ final class SessionPlacedOrdersProvider
     with
         $FutureModifier<List<RestaurantOrder>>,
         $StreamProvider<List<RestaurantOrder>> {
+  /// P3-11: Provider expose danh sách order đã gửi trong session (Firestore realtime).
   const SessionPlacedOrdersProvider._({
     required SessionPlacedOrdersFamily super.from,
     required String super.argument,
@@ -69,6 +73,8 @@ final class SessionPlacedOrdersProvider
 String _$sessionPlacedOrdersHash() =>
     r'8a9dd7fa4e5071e96931fe8d25739a9bb303b9ad';
 
+/// P3-11: Provider expose danh sách order đã gửi trong session (Firestore realtime).
+
 final class SessionPlacedOrdersFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<RestaurantOrder>>, String> {
   const SessionPlacedOrdersFamily._()
@@ -79,6 +85,8 @@ final class SessionPlacedOrdersFamily extends $Family
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
+
+  /// P3-11: Provider expose danh sách order đã gửi trong session (Firestore realtime).
 
   SessionPlacedOrdersProvider call(String sessionId) =>
       SessionPlacedOrdersProvider._(argument: sessionId, from: this);
@@ -129,7 +137,7 @@ final class DiningCartViewModelProvider
 }
 
 String _$diningCartViewModelHash() =>
-    r'3bcbdf172f3b2eff40de7391f005835649277cb8';
+    r'0ce552acccf732527b14768a77cf6cc55274f8da';
 
 final class DiningCartViewModelFamily extends $Family
     with

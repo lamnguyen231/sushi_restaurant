@@ -1,9 +1,10 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../models/dining_session.dart';
 
 import '../../repositories/local_cart_repository.dart';
+import '../../repositories/local_pending_order_repository.dart';
 import '../../services/sqlite_cart_service.dart';
+import '../../services/sqlite_pending_order_service.dart';
 
 part 'local_providers.g.dart';
 
@@ -16,6 +17,17 @@ SqliteCartService sqliteCartService(Ref ref) {
 LocalCartRepository localCartRepository(Ref ref) {
   final service = ref.watch(sqliteCartServiceProvider);
   return LocalCartRepository(service);
+}
+
+@Riverpod(keepAlive: true)
+SqlitePendingOrderService sqlitePendingOrderService(Ref ref) {
+  return SqlitePendingOrderService();
+}
+
+@Riverpod(keepAlive: true)
+LocalPendingOrderRepository localPendingOrderRepository(Ref ref) {
+  final service = ref.watch(sqlitePendingOrderServiceProvider);
+  return LocalPendingOrderRepository(service);
 }
 
 @Riverpod(keepAlive: true)
