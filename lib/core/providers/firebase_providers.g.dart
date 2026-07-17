@@ -539,7 +539,7 @@ final class CurrentUserProvider
         argument: null,
         retry: null,
         name: r'currentUserProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -558,7 +558,7 @@ final class CurrentUserProvider
   }
 }
 
-String _$currentUserHash() => r'9df15945e7d5975877cea9e9f3624b7b3c928a5f';
+String _$currentUserHash() => r'51c724d5ba12531eb530eb0a92888e2e5dc7008f';
 
 @ProviderFor(productRepository)
 const productRepositoryProvider = ProductRepositoryProvider._();

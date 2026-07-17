@@ -89,7 +89,7 @@ AuthRepository authRepository(Ref ref) {
   );
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<AppUser?> currentUser(Ref ref) {
   return ref.watch(authRepositoryProvider).watchCurrentUser();
 }

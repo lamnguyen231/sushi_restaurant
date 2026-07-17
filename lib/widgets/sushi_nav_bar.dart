@@ -18,7 +18,7 @@ class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(currentUserProvider);
-    final isCompact = MediaQuery.sizeOf(context).width < 800;
+    final isCompact = MediaQuery.sizeOf(context).width < 900;
 
     return AppBar(
       titleSpacing: isCompact ? 12 : 18,

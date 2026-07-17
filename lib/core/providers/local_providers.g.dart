@@ -254,3 +254,88 @@ abstract class _$CurrentDiningSession extends $Notifier<DiningSession?> {
     element.handleValue(ref, created);
   }
 }
+
+@ProviderFor(deviceSessionAssignmentService)
+const deviceSessionAssignmentServiceProvider =
+    DeviceSessionAssignmentServiceProvider._();
+
+final class DeviceSessionAssignmentServiceProvider
+    extends
+        $FunctionalProvider<
+          DeviceSessionAssignmentService,
+          DeviceSessionAssignmentService,
+          DeviceSessionAssignmentService
+        >
+    with $Provider<DeviceSessionAssignmentService> {
+  const DeviceSessionAssignmentServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'deviceSessionAssignmentServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$deviceSessionAssignmentServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<DeviceSessionAssignmentService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DeviceSessionAssignmentService create(Ref ref) {
+    return deviceSessionAssignmentService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DeviceSessionAssignmentService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DeviceSessionAssignmentService>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$deviceSessionAssignmentServiceHash() =>
+    r'9bca7d7eefa015d30f54d34205153cbe5d0f757e';
+
+@ProviderFor(restoreDiningSession)
+const restoreDiningSessionProvider = RestoreDiningSessionProvider._();
+
+final class RestoreDiningSessionProvider
+    extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
+    with $FutureModifier<void>, $FutureProvider<void> {
+  const RestoreDiningSessionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'restoreDiningSessionProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$restoreDiningSessionHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<void> create(Ref ref) {
+    return restoreDiningSession(ref);
+  }
+}
+
+String _$restoreDiningSessionHash() =>
+    r'3e459c5232e1459af33c4d862462329cb4ce4574';
