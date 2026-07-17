@@ -16,7 +16,7 @@ class SushiProductDiningGridItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -29,18 +29,24 @@ class SushiProductDiningGridItem extends StatelessWidget {
           // Image
           Expanded(
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(15),
+              ),
               child: Image.network(
                 product.imageUrl ?? '',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: AppTheme.rice,
-                  child: const Icon(Icons.image_not_supported, color: AppTheme.mutedInk, size: 40),
+                  child: const Icon(
+                    Icons.image_not_supported,
+                    color: AppTheme.mutedInk,
+                    size: 40,
+                  ),
                 ),
               ),
             ),
           ),
-          
+
           // Info
           Padding(
             padding: const EdgeInsets.all(12),
@@ -49,15 +55,20 @@ class SushiProductDiningGridItem extends StatelessWidget {
               children: [
                 Text(
                   product.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (product.description != null && product.description!.isNotEmpty) ...[
+                if (product.description != null &&
+                    product.description!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     product.description!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -66,10 +77,18 @@ class SushiProductDiningGridItem extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      formatCurrency.format(product.price),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    Expanded(
+                      child: Text(
+                        formatCurrency.format(product.price),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     InkWell(
                       onTap: onAddToCart,
                       borderRadius: BorderRadius.circular(20),
@@ -79,7 +98,11 @@ class SushiProductDiningGridItem extends StatelessWidget {
                           color: AppTheme.vermilion,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.add, color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ],
