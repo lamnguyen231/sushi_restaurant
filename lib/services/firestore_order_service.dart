@@ -12,12 +12,7 @@ class FirestoreOrderService {
     return _firestore
         .collection('orders')
         .where('status', whereIn: ['pending', 'accepted', 'preparing'])
-        .snapshots();
-  }
-
-  Stream<QuerySnapshot<Map<String, dynamic>>> watchAllOrders() {
-    return _firestore
-        .collection('orders')
+        .orderBy('createdAt')
         .snapshots();
   }
 
@@ -34,6 +29,7 @@ class FirestoreOrderService {
     return _firestore
         .collection('orders')
         .where('sessionId', isEqualTo: sessionId)
+        .orderBy('createdAt')
         .snapshots();
   }
 

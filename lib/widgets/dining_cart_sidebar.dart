@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:go_router/go_router.dart';
 
 import '../core/providers/firebase_providers.dart';
 import '../core/theme/app_theme.dart';
@@ -67,26 +66,9 @@ class DiningCartSidebar extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Hóa đơn bàn',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => context.go('/dining/orders'),
-                    icon: const Icon(Icons.receipt_long, size: 18, color: AppTheme.vermilion),
-                    label: const Text(
-                      'Lịch sử đơn',
-                      style: TextStyle(
-                        color: AppTheme.vermilion,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
+              Text(
+                'Hóa đơn bàn',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('Order ID: #${session.id.substring(0, 6)}', style: const TextStyle(color: Colors.grey)),

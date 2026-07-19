@@ -18,24 +18,14 @@ class FirestoreOrderRepository implements OrderRepository {
   @override
   Stream<List<RestaurantOrder>> watchKitchenOrders() {
     return _orderService.watchKitchenOrders().map(
-      (snapshot) => snapshot.docs.map(_fromDoc).toList()
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt)),
+      (snapshot) => snapshot.docs.map(_fromDoc).toList(),
     );
   }
 
   @override
   Stream<List<RestaurantOrder>> watchSessionOrders(String sessionId) {
     return _orderService.watchSessionOrders(sessionId).map(
-      (snapshot) => snapshot.docs.map(_fromDoc).toList()
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt)),
-    );
-  }
-
-  @override
-  Stream<List<RestaurantOrder>> watchAllOrders() {
-    return _orderService.watchAllOrders().map(
-      (snapshot) => snapshot.docs.map(_fromDoc).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)), // Newest first
+      (snapshot) => snapshot.docs.map(_fromDoc).toList(),
     );
   }
 
