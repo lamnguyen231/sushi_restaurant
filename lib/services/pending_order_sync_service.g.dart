@@ -1,11 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
 
 part of 'pending_order_sync_service.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
 @ProviderFor(pendingOrderSync)
 const pendingOrderSyncProvider = PendingOrderSyncProvider._();
@@ -52,4 +54,4 @@ final class PendingOrderSyncProvider
   }
 }
 
-String _$pendingOrderSyncHash() => r'dummyhashsync';
+String _$pendingOrderSyncHash() => r'1cac4da74c9bb3ffa04f02673b3501e919c73164';

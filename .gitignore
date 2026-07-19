@@ -54,3 +54,4 @@ firebase_config.local.json
 # Keep these local-only because GitHub secret scanning flags their API keys.
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+thoughts/

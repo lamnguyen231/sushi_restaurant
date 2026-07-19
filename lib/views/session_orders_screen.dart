@@ -12,6 +12,7 @@ import '../widgets/empty_state_view.dart';
 import '../widgets/error_view.dart';
 import '../widgets/loading_view.dart';
 import '../widgets/primary_button.dart';
+import '../widgets/staff_session_unlock_button.dart';
 
 class SessionOrdersScreen extends ConsumerWidget {
   const SessionOrdersScreen({super.key});
@@ -32,171 +33,187 @@ class SessionOrdersScreen extends ConsumerWidget {
     final ordersAsync = ref.watch(sessionPlacedOrdersProvider(session.id));
     final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('ĐƠN ĐÃ GỬI BẾP - ${session.tableName.toUpperCase()}'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dining/menu'),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('ĐƠN ĐÃ GỬI BẾP - ${session.tableName.toUpperCase()}'),
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/dining/menu'),
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: () => context.go('/dining/menu'),
+              icon: const Icon(Icons.restaurant_menu),
+              label: const Text('Menu'),
+            ),
+            TextButton.icon(
+              onPressed: () => context.go('/dining/cart'),
+              icon: const Icon(Icons.shopping_cart_outlined),
+              label: const Text('Giỏ'),
+            ),
+            StaffSessionUnlockButton(session: session),
+          ],
         ),
-      ),
-      body: ordersAsync.when(
-        loading: () => const LoadingView(message: 'Đang tải lịch sử gọi món...'),
-        error: (error, stack) => ErrorView(message: 'Lỗi tải lịch sử: $error'),
-        data: (orders) {
-          if (orders.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const EmptyStateView(
-                    message: 'Bàn chưa đặt món ăn nào.\nHãy quay lại menu để gọi món nhé!',
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: () => context.go('/dining/menu'),
-                    child: const Text('QUAY LẠI MENU'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // P3-14: Tính tổng hóa đơn các đơn đã đặt của phiên (chỉ tính các đơn không bị hủy/từ chối)
-          final activeOrders = orders.where((o) =>
-              o.status != DineInOrderStatus.cancelled &&
-              o.status != DineInOrderStatus.rejected);
-          
-          final sessionTotal = activeOrders.fold<double>(
-            0,
-            (sum, order) => sum + order.grandTotal,
-          );
-
-          return Column(
-            children: [
-              // Thông tin tóm tắt phiên đặt món
-              Container(
-                color: Colors.white,
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        body: ordersAsync.when(
+          loading: () => const LoadingView(message: 'Đang tải lịch sử gọi món...'),
+          error: (error, stack) => ErrorView(message: 'Lỗi tải lịch sử: $error'),
+          data: (orders) {
+            if (orders.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'TÓM TẮT PHIÊN ĂN',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppTheme.mutedInk,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Số lượng đơn đã gửi: ${orders.length} đơn',
-                          style: const TextStyle(fontSize: 15),
-                        ),
-                      ],
+                    const EmptyStateView(
+                      message: 'Bàn chưa đặt món ăn nào.\nHãy quay lại menu để gọi món nhé!',
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          'TỔNG TIỀN TẠM TÍNH:',
-                          style: TextStyle(fontSize: 13, color: AppTheme.mutedInk),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          formatCurrency.format(sessionTotal),
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.vermilion,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () => context.go('/dining/menu'),
+                      child: const Text('QUAY LẠI MENU'),
                     ),
                   ],
                 ),
-              ),
-              const Divider(height: 1, color: AppTheme.rice),
+              );
+            }
 
-              // Danh sách các đơn đã đặt
-              Expanded(
-                child: ListView.builder(
+            final activeOrders = orders.where((o) =>
+                o.status != DineInOrderStatus.cancelled &&
+                o.status != DineInOrderStatus.rejected);
+            
+            final sessionTotal = activeOrders.fold<double>(
+              0,
+              (sum, order) => sum + order.grandTotal,
+            );
+
+            return Column(
+              children: [
+                // Thông tin tóm tắt phiên đặt món
+                Container(
+                  color: Colors.white,
                   padding: const EdgeInsets.all(24),
-                  itemCount: orders.length,
-                  itemBuilder: (context, index) {
-                    final order = orders[index];
-                    return _OrderHistoryCard(order: order);
-                  },
-                ),
-              ),
-
-              // Thanh điều khiển phía dưới
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
-                  color: AppTheme.paper,
-                  border: Border(top: BorderSide(color: AppTheme.rice)),
-                ),
-                child: SafeArea(
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.notifications_active_outlined),
-                          label: const Text('GỌI NHÂN VIÊN'),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đang gọi nhân viên hỗ trợ...')),
-                            );
-                          },
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'TÓM TẮT PHIÊN ĂN',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppTheme.mutedInk,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Số lượng đơn đã gửi: ${orders.length} đơn',
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: PrimaryButton(
-                          label: 'YÊU CẦU THANH TOÁN',
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Yêu cầu thanh toán'),
-                                content: Text(
-                                  'Tổng hóa đơn của quý khách là ${formatCurrency.format(sessionTotal)}.\nNhân viên sẽ mang hóa đơn và thiết bị thanh toán tới bàn trong giây lát.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('ĐÓNG'),
-                                  ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.vermilion,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Đã gửi yêu cầu thanh toán xuống quầy thu ngân!')),
-                                      );
-                                    },
-                                    child: const Text('XÁC NHẬN'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text(
+                            'TỔNG TIỀN TẠM TÍNH:',
+                            style: TextStyle(fontSize: 13, color: AppTheme.mutedInk),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            formatCurrency.format(sessionTotal),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.vermilion,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+                const Divider(height: 1, color: AppTheme.rice),
+
+                // Danh sách các đơn đã đặt
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(24),
+                    itemCount: orders.length,
+                    itemBuilder: (context, index) {
+                      final order = orders[index];
+                      return _OrderHistoryCard(order: order);
+                    },
+                  ),
+                ),
+
+                // Thanh điều khiển phía dưới
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: AppTheme.paper,
+                    border: Border(top: BorderSide(color: AppTheme.rice)),
+                  ),
+                  child: SafeArea(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.notifications_active_outlined),
+                            label: const Text('GỌI NHÂN VIÊN'),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Đang gọi nhân viên hỗ trợ...')),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: PrimaryButton(
+                            label: 'YÊU CẦU THANH TOÁN',
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Yêu cầu thanh toán'),
+                                  content: Text(
+                                    'Tổng hóa đơn của quý khách là ${formatCurrency.format(sessionTotal)}.\nNhân viên sẽ mang hóa đơn và thiết bị thanh toán tới bàn trong giây lát.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('ĐÓNG'),
+                                    ),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppTheme.vermilion,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Đã gửi yêu cầu thanh toán xuống quầy thu ngân!')),
+                                        );
+                                      },
+                                      child: const Text('XÁC NHẬN'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

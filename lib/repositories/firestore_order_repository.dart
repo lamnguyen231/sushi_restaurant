@@ -161,6 +161,63 @@ class FirestoreOrderRepository implements OrderRepository {
   }
 
   @override
+  Future<RestaurantOrder> placeWebPickupOrder({
+    required String customerName,
+    required String customerPhone,
+    required String pickupTime,
+    required String? note,
+    required List<OrderItem> items,
+    String? createdBy,
+  }) async {
+    final idempotencyKey =
+        'web_${customerPhone}_${DateTime.now().microsecondsSinceEpoch}';
+    final now = DateTime.now();
+
+    final subtotal = items.fold<double>(
+      0,
+      (total, item) => total + item.lineTotal,
+    );
+
+    final doc = await _orderService.createOrder({
+      'source': OrderSource.web.name,
+      'orderType': OrderType.pickup.name,
+      'customer': {
+        'name': customerName,
+        'phone': customerPhone,
+        'pickupTime': pickupTime,
+        'note': note,
+      },
+      'items': items.map(_orderItemToMap).toList(),
+      'subtotal': subtotal,
+      'deliveryFee': 0.0,
+      'discount': 0.0,
+      'grandTotal': subtotal,
+      'status': DineInOrderStatus.pending.name,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'idempotencyKey': idempotencyKey,
+      'createdBy': createdBy,
+    });
+
+    return RestaurantOrder(
+      id: doc.id,
+      source: OrderSource.web,
+      orderType: OrderType.pickup,
+      items: items,
+      subtotal: subtotal,
+      discount: 0.0,
+      grandTotal: subtotal,
+      status: DineInOrderStatus.pending,
+      createdAt: now,
+      updatedAt: now,
+      idempotencyKey: idempotencyKey,
+      createdBy: createdBy,
+      customerName: customerName,
+      customerPhone: customerPhone,
+    );
+  }
+
+  @override
   Future<void> updateOrderStatus({
     required String orderId,
     required String status,
@@ -205,6 +262,10 @@ class FirestoreOrderRepository implements OrderRepository {
         ? updatedAtTs.toDate()
         : DateTime.now();
 
+    final customerData = data['customer'] as Map<String, dynamic>?;
+    final customerName = customerData?['name'] as String?;
+    final customerPhone = customerData?['phone'] as String?;
+
     return RestaurantOrder(
       id: doc.id,
       source: OrderSource.values.firstWhere(
@@ -228,6 +289,8 @@ class FirestoreOrderRepository implements OrderRepository {
       updatedAt: updatedAt,
       createdBy: data['createdBy'] as String?,
       idempotencyKey: data['idempotencyKey'] as String? ?? doc.id,
+      customerName: customerName,
+      customerPhone: customerPhone,
     );
   }
 

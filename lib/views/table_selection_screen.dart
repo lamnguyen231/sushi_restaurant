@@ -101,23 +101,24 @@ class TableSelectionScreen extends ConsumerWidget {
     try {
       final session = await ref
           .read(tableSelectionViewModelProvider.notifier)
-          .startSession(
-            table,
-            guestCount: guestCount,
-          );
+          .startSession(table, guestCount: guestCount);
 
       if (!context.mounted) return;
       ref.read(currentDiningSessionProvider.notifier).setSession(session);
+      await ref
+          .read(deviceSessionAssignmentServiceProvider)
+          .saveActiveSession(session);
+      if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã mở phiên cho ${table.name}.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Đã mở phiên cho ${table.name}.')));
       GoRouter.of(context).go('/dining/menu');
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Không thể mở phiên: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Không thể mở phiên: $error')));
     }
   }
 
@@ -159,6 +160,10 @@ class TableSelectionScreen extends ConsumerWidget {
 
       if (!context.mounted) return;
       ref.read(currentDiningSessionProvider.notifier).clear();
+      await ref
+          .read(deviceSessionAssignmentServiceProvider)
+          .clearActiveSession();
+      if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đã kết thúc phiên của ${table.name}.')),
@@ -346,29 +351,19 @@ class _TableCard extends StatelessWidget {
           Text(
             available ? 'TRỐNG' : table.status.name.toUpperCase(),
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: available ? AppTheme.ink : AppTheme.vermilion,
-                ),
+              color: available ? AppTheme.ink : AppTheme.vermilion,
+            ),
             textAlign: TextAlign.center,
           ),
           const Spacer(),
           if (available)
-            PrimaryButton(
-              label: 'Mở phiên',
-              onPressed: onStartSession,
-            )
+            PrimaryButton(label: 'Mở phiên', onPressed: onStartSession)
           else if (occupied && table.activeSessionId != null)
-            PrimaryButton(
-              label: 'Đóng phiên',
-              onPressed: onCloseSession,
-            )
+            PrimaryButton(label: 'Đóng phiên', onPressed: onCloseSession)
           else
-            PrimaryButton(
-              label: 'Không khả dụng',
-              onPressed: null,
-            ),
+            PrimaryButton(label: 'Không khả dụng', onPressed: null),
         ],
       ),
     );
   }
 }
-
