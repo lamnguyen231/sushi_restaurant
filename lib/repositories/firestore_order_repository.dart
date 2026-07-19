@@ -31,6 +31,14 @@ class FirestoreOrderRepository implements OrderRepository {
     );
   }
 
+  @override
+  Stream<List<RestaurantOrder>> watchAllOrders() {
+    return _orderService.watchAllOrders().map(
+      (snapshot) => snapshot.docs.map(_fromDoc).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)), // Newest first
+    );
+  }
+
   /// P3-01: Chuyển cart items từ SQLite thành Firestore order.
   /// P3-02: name và unitPrice được snapshot từ CartItem (đã lấy từ SQLite).
   /// P3-03: subtotal và grandTotal được tính lại trong repository,

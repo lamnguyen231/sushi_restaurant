@@ -869,3 +869,81 @@ final class InitializeNotificationsProvider
 
 String _$initializeNotificationsHash() => r'dummyhashnotifications';
 
+@ProviderFor(allOrders)
+const allOrdersProvider = AllOrdersProvider._();
+
+final class AllOrdersProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RestaurantOrder>>,
+          List<RestaurantOrder>,
+          Stream<List<RestaurantOrder>>
+        >
+    with $FutureModifier<List<RestaurantOrder>>, $StreamProvider<List<RestaurantOrder>> {
+  const AllOrdersProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'allOrdersProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$allOrdersHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RestaurantOrder>> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RestaurantOrder>> create(Ref ref) {
+    return allOrders(ref);
+  }
+}
+
+String _$allOrdersHash() => r'dummyhashallorders';
+
+@ProviderFor(reservationsStream)
+const reservationsStreamProvider = ReservationsStreamProvider._();
+
+final class ReservationsStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Reservation>>,
+          List<Reservation>,
+          Stream<List<Reservation>>
+        >
+    with $FutureModifier<List<Reservation>>, $StreamProvider<List<Reservation>> {
+  const ReservationsStreamProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'reservationsStreamProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$reservationsStreamHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Reservation>> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Reservation>> create(Ref ref) {
+    return reservationsStream(ref);
+  }
+}
+
+String _$reservationsStreamHash() => r'dummyhashreservationsstream';
+
+
+

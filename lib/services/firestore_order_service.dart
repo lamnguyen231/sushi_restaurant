@@ -15,6 +15,12 @@ class FirestoreOrderService {
         .snapshots();
   }
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> watchAllOrders() {
+    return _firestore
+        .collection('orders')
+        .snapshots();
+  }
+
   Future<DocumentReference<Map<String, dynamic>>> createOrder(
     Map<String, dynamic> data,
   ) {

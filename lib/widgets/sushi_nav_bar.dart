@@ -247,7 +247,7 @@ class _RoleActionButton extends StatelessWidget {
 List<_RoleAction> _roleActionFor(AppUser user) {
   return switch (user.role) {
     UserRole.manager => const [
-        _RoleAction('DASHBOARD', '/staff/tables'),
+        _RoleAction('DASHBOARD', '/manager/dashboard'),
         _RoleAction('TABLES LIST', '/staff/tables'),
         _RoleAction('MENU MGMT', '/admin/menu'),
       ],

@@ -17,4 +17,6 @@ abstract interface class OrderRepository {
     required String orderId,
     required String status,
   });
+
+  Stream<List<RestaurantOrder>> watchAllOrders();
 }

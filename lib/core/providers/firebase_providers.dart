@@ -26,6 +26,8 @@ import '../../services/firestore_product_service.dart';
 import '../../services/firestore_reservation_service.dart';
 import '../../services/firestore_table_service.dart';
 import '../../models/app_user.dart';
+import '../../models/restaurant_order.dart';
+import '../../models/reservation.dart';
 import 'local_providers.dart';
 
 part 'firebase_providers.g.dart';
@@ -145,5 +147,15 @@ Future<void> initializeNotifications(Ref ref) async {
   } catch (e) {
     debugPrint('Error initializing notifications: $e');
   }
+}
+
+@riverpod
+Stream<List<RestaurantOrder>> allOrders(Ref ref) {
+  return ref.watch(orderRepositoryProvider).watchAllOrders();
+}
+
+@riverpod
+Stream<List<Reservation>> reservationsStream(Ref ref) {
+  return ref.watch(reservationRepositoryProvider).watchReservations();
 }
 
