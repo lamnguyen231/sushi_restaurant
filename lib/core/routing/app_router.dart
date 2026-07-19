@@ -16,6 +16,11 @@ import '../../views/table_selection_screen.dart';
 import '../../views/web_cart_screen.dart';
 import '../../views/web_home_screen.dart';
 import '../../views/web_menu_screen.dart';
+import '../../views/manager_dashboard_screen.dart';
+import '../../views/manager_orders_screen.dart';
+import '../../views/revenue_analytics_screen.dart';
+import '../../views/reports_export_screen.dart';
+import '../../views/profit_analytics_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -78,6 +83,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/menu',
         builder: (context, state) => const AdminMenuScreen(),
+      ),
+      // ── Manager routes ──────────────────────────────────────────────────
+      GoRoute(
+        path: '/manager/dashboard',
+        builder: (context, state) => const ManagerDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/manager/orders',
+        builder: (context, state) => const ManagerOrdersScreen(),
+      ),
+      GoRoute(
+        path: '/manager/analytics/revenue',
+        builder: (context, state) => const RevenueAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/manager/reports',
+        builder: (context, state) => const ReportsExportScreen(),
+      ),
+      GoRoute(
+        path: '/manager/analytics/profit',
+        builder: (context, state) => const ProfitAnalyticsScreen(),
       ),
     ],
   );

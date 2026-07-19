@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -25,6 +26,8 @@ import '../../services/firestore_product_service.dart';
 import '../../services/firestore_reservation_service.dart';
 import '../../services/firestore_table_service.dart';
 import '../../models/app_user.dart';
+import '../../models/restaurant_order.dart';
+import '../../models/reservation.dart';
 import 'local_providers.dart';
 
 part 'firebase_providers.g.dart';
@@ -132,3 +135,27 @@ NotificationRepository notificationRepository(Ref ref) {
     ref.watch(firebaseNotificationServiceProvider),
   );
 }
+
+@riverpod
+Future<void> initializeNotifications(Ref ref) async {
+  final repo = ref.watch(notificationRepositoryProvider);
+  try {
+    await repo.requestPermission();
+    final token = await repo.getDeviceToken();
+    // print FCM token for development and debugging
+    debugPrint('FCM Token: $token');
+  } catch (e) {
+    debugPrint('Error initializing notifications: $e');
+  }
+}
+
+@riverpod
+Stream<List<RestaurantOrder>> allOrders(Ref ref) {
+  return ref.watch(orderRepositoryProvider).watchAllOrders();
+}
+
+@riverpod
+Stream<List<Reservation>> reservationsStream(Ref ref) {
+  return ref.watch(reservationRepositoryProvider).watchReservations();
+}
+
