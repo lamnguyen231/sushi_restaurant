@@ -259,6 +259,9 @@ class _OrderRepo implements OrderRepository {
     required String orderId,
     required String status,
   }) async {}
+
+  @override
+  Stream<List<RestaurantOrder>> watchAllOrders() => Stream.value(const []);
 }
 
 class _SessionRepo implements DiningSessionRepository {

@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import 'dart:convert';
+import '../services/file_saver/file_saver.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+
 import '../core/enums/app_enums.dart';
 import '../core/theme/app_theme.dart';
 import '../core/providers/firebase_providers.dart';
@@ -175,7 +180,13 @@ class _ReportsExportScreenState extends ConsumerState<ReportsExportScreen> {
                               ),
                               onPressed: (_isExportingPdf || _isExportingCsv)
                                   ? null
-                                  : () => _handleExport(isPdf: true),
+                                  : () => _handleExport(
+                                        isPdf: true,
+                                        revenue: revenue,
+                                        completedCount: completed.length,
+                                        cancelledCount: cancelled.length,
+                                        aov: aov,
+                                      ),
                               icon: _isExportingPdf
                                   ? const SizedBox(
                                       width: 18,
@@ -197,7 +208,13 @@ class _ReportsExportScreenState extends ConsumerState<ReportsExportScreen> {
                               ),
                               onPressed: (_isExportingPdf || _isExportingCsv)
                                   ? null
-                                  : () => _handleExport(isPdf: false),
+                                  : () => _handleExport(
+                                        isPdf: false,
+                                        revenue: revenue,
+                                        completedCount: completed.length,
+                                        cancelledCount: cancelled.length,
+                                        aov: aov,
+                                      ),
                               icon: _isExportingCsv
                                   ? const SizedBox(
                                       width: 18,
@@ -331,7 +348,13 @@ class _ReportsExportScreenState extends ConsumerState<ReportsExportScreen> {
     }
   }
 
-  Future<void> _handleExport({required bool isPdf}) async {
+  Future<void> _handleExport({
+    required bool isPdf,
+    required double revenue,
+    required int completedCount,
+    required int cancelledCount,
+    required double aov,
+  }) async {
     setState(() {
       if (isPdf) {
         _isExportingPdf = true;
@@ -340,18 +363,85 @@ class _ReportsExportScreenState extends ConsumerState<ReportsExportScreen> {
       }
     });
 
-    // Simulating exporting delay (premium animation feel)
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    if (!mounted) return;
-
-    setState(() {
-      _isExportingPdf = false;
-      _isExportingCsv = false;
-    });
-
     final formatStart = DateFormat('dd-MM-yyyy').format(_startDate);
     final formatEnd = DateFormat('dd-MM-yyyy').format(_endDate);
+
+    try {
+      if (isPdf) {
+        final pdf = pw.Document();
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            build: (pw.Context context) {
+              return pw.Padding(
+                padding: const pw.EdgeInsets.all(32),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('SUSHI RESTAURANT - REVENUE REPORT',
+                        style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                        'Giai doan: ${DateFormat('dd/MM/yyyy').format(_startDate)} - ${DateFormat('dd/MM/yyyy').format(_endDate)}'),
+                    pw.Divider(height: 24),
+                    pw.SizedBox(height: 16),
+                    pw.Text('TONG HOP SO LIEU (SUMMARY STATISTICS)',
+                        style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 12),
+                    pw.Text('1. Tong Doanh thu (Total Revenue): ${revenue.toStringAsFixed(0)} VND'),
+                    pw.Text('2. Don hang thanh cong (Completed Orders): $completedCount'),
+                    pw.Text('3. Don hang da huy (Cancelled Orders): $cancelledCount'),
+                    pw.Text('4. Gia tri don trung binh (AOV): ${aov.toStringAsFixed(0)} VND'),
+                    pw.SizedBox(height: 32),
+                    pw.Divider(height: 24),
+                    pw.Text(
+                        'Ngay lap bao cao: ${DateFormat('HH:mm dd/MM/yyyy').format(DateTime.now())}',
+                        style: const pw.TextStyle(color: PdfColors.grey)),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+        final bytes = await pdf.save();
+        saveFile(
+          'BaoCao_DoanhThu_${formatStart}_$formatEnd.pdf',
+          bytes,
+          'application/pdf',
+        );
+      } else {
+        final csvString = '\uFEFF'
+            'BÁO CÁO DOANH THU VÀ ĐƠN HÀNG\n'
+            'Thời gian từ ngày,${DateFormat('dd/MM/yyyy').format(_startDate)},đến ngày,${DateFormat('dd/MM/yyyy').format(_endDate)}\n'
+            'Ngày kết xuất,${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}\n\n'
+            'Chỉ số,Giá trị\n'
+            'Tổng doanh thu (VND),${revenue.toStringAsFixed(0)}\n'
+            'Đơn hàng thành công,$completedCount\n'
+            'Đơn hàng đã hủy,$cancelledCount\n'
+            'Giá trị đơn trung bình (AOV),${aov.toStringAsFixed(0)}\n';
+        final bytes = utf8.encode(csvString);
+        saveFile(
+          'BaoCao_DoanhThu_${formatStart}_$formatEnd.csv',
+          bytes,
+          'text/csv',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.red, content: Text('Lỗi xuất file: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExportingPdf = false;
+          _isExportingCsv = false;
+        });
+      }
+    }
+
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
