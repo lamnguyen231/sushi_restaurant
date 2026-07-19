@@ -834,3 +834,38 @@ final class NotificationRepositoryProvider
 
 String _$notificationRepositoryHash() =>
     r'ff7ed75594221f32050db9b0d38fcfe66309b28c';
+
+@ProviderFor(initializeNotifications)
+const initializeNotificationsProvider = InitializeNotificationsProvider._();
+
+final class InitializeNotificationsProvider
+    extends
+        $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
+    with $FutureModifier<void>, $FutureProvider<void> {
+  const InitializeNotificationsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'initializeNotificationsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$initializeNotificationsHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<void> create(Ref ref) {
+    return initializeNotifications(ref);
+  }
+}
+
+String _$initializeNotificationsHash() => r'dummyhashnotifications';
+

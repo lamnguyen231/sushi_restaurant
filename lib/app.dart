@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/providers/firebase_providers.dart';
 import 'services/pending_order_sync_service.dart';
 
 class SushiRestaurantApp extends ConsumerWidget {
@@ -12,6 +13,9 @@ class SushiRestaurantApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Khoi chay he thong dong bo pending orders tu dong
     ref.read(pendingOrderSyncProvider);
+    
+    // Khoi chay thong bao FCM
+    ref.read(initializeNotificationsProvider);
     
     final router = ref.watch(appRouterProvider);
 

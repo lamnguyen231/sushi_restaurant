@@ -12,7 +12,6 @@ class FirestoreOrderService {
     return _firestore
         .collection('orders')
         .where('status', whereIn: ['pending', 'accepted', 'preparing'])
-        .orderBy('createdAt')
         .snapshots();
   }
 
@@ -29,7 +28,6 @@ class FirestoreOrderService {
     return _firestore
         .collection('orders')
         .where('sessionId', isEqualTo: sessionId)
-        .orderBy('createdAt')
         .snapshots();
   }
 

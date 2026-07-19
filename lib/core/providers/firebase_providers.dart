@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -132,3 +133,17 @@ NotificationRepository notificationRepository(Ref ref) {
     ref.watch(firebaseNotificationServiceProvider),
   );
 }
+
+@riverpod
+Future<void> initializeNotifications(Ref ref) async {
+  final repo = ref.watch(notificationRepositoryProvider);
+  try {
+    await repo.requestPermission();
+    final token = await repo.getDeviceToken();
+    // print FCM token for development and debugging
+    debugPrint('FCM Token: $token');
+  } catch (e) {
+    debugPrint('Error initializing notifications: $e');
+  }
+}
+

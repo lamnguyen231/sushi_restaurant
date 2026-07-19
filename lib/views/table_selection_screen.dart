@@ -132,7 +132,20 @@ class TableSelectionScreen extends ConsumerWidget {
       return;
     }
 
-    final confirmed = await _confirmCloseSession(context, table);
+    // P3-12: Check if there are any unsynced pending orders for this session
+    final pendingRepo = ref.read(localPendingOrderRepositoryProvider);
+    final localOrders = await pendingRepo.getOrders(sessionId: sessionId);
+    final hasUnsynced = localOrders.any(
+      (o) => o.status == SyncStatus.localOnly || o.status == SyncStatus.failed,
+    );
+
+    if (!context.mounted) return;
+
+    final confirmed = await _confirmCloseSession(
+      context,
+      table,
+      hasUnsynced: hasUnsynced,
+    );
     if (!context.mounted) return;
 
     if (!confirmed) {
@@ -227,28 +240,63 @@ class TableSelectionScreen extends ConsumerWidget {
 
   Future<bool> _confirmCloseSession(
     BuildContext context,
-    TableInfo table,
-  ) async {
+    TableInfo table, {
+    required bool hasUnsynced,
+  }) async {
     final result = await showDialog<bool>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Kết thúc phiên ${table.name}?'),
-            content: const Text(
-              'Sau khi kết thúc, bàn sẽ mở lại cho phiên mới.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Hủy'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Xác nhận kết thúc'),
-              ),
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Kết thúc phiên ${table.name}?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasUnsynced) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade900.withOpacity(0.2),
+                    border: Border.all(color: Colors.red),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Colors.red),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'CẢNH BÁO: Bàn này hiện đang có đơn đặt món chưa đồng bộ lên hệ thống do mất kết nối. Nếu đóng phiên, các đơn hàng này có thể sẽ bị mất vĩnh viễn!',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const Text('Sau khi kết thúc, bàn sẽ mở lại cho phiên mới.'),
             ],
-          );
-        },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              style: hasUnsynced
+                  ? FilledButton.styleFrom(backgroundColor: Colors.red)
+                  : null,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Xác nhận kết thúc'),
+            ),
+          ],
+        );
+      },
     );
 
     return result ?? false;
