@@ -6,6 +6,8 @@ enum DiningSessionStatus { active, closed, cancelled }
 
 enum PaymentStatus { unpaid, requested, paid, refunded }
 
+enum DiningPaymentMethod { cash, qr }
+
 enum OrderSource { web, tableDevice }
 
 enum OrderType { dineIn, pickup, delivery }

@@ -55,3 +55,4 @@ firebase_config.local.json
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 thoughts/
+architecture-needed.md

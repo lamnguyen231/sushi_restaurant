@@ -12,6 +12,7 @@ import '../../views/pickup_checkout_screen.dart';
 import '../../views/profile_screen.dart';
 import '../../views/reservation_screen.dart';
 import '../../views/session_orders_screen.dart';
+import '../../views/session_receipt_screen.dart';
 import '../../views/table_selection_screen.dart';
 import '../../views/web_cart_screen.dart';
 import '../../views/web_home_screen.dart';
@@ -26,18 +27,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const WebHomeScreen(),
-      ),
-      GoRoute(
-        path: '/about',
-        builder: (context, state) => const AboutScreen(),
-      ),
-      GoRoute(
-        path: '/info',
-        builder: (context, state) => const InfoScreen(),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const WebHomeScreen()),
+      GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
+      GoRoute(path: '/info', builder: (context, state) => const InfoScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/profile',
@@ -58,6 +50,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dining/orders',
         builder: (context, state) => const SessionOrdersScreen(),
+      ),
+      GoRoute(
+        path: '/dining/receipt',
+        builder: (context, state) =>
+            SessionReceiptScreen(unlockedSessionId: state.extra as String?),
       ),
       GoRoute(
         path: '/kitchen/orders',
