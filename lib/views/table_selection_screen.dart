@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/enums/app_enums.dart';
+import '../core/providers/firebase_providers.dart';
+import '../core/providers/local_providers.dart';
 import '../core/theme/app_theme.dart';
 import '../models/table_info.dart';
+import '../viewmodels/dining_cart_view_model.dart';
 import '../viewmodels/table_selection_view_model.dart';
 import '../widgets/empty_state_view.dart';
 import '../widgets/error_view.dart';
@@ -12,7 +15,6 @@ import '../widgets/ink_frame.dart';
 import '../widgets/loading_view.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/sushi_nav_bar.dart';
-import '../core/providers/local_providers.dart';
 
 class TableSelectionScreen extends ConsumerWidget {
   const TableSelectionScreen({super.key});
@@ -20,6 +22,8 @@ class TableSelectionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tablesState = ref.watch(tableSelectionViewModelProvider);
+    final isManager =
+        ref.watch(currentUserProvider).value?.role == UserRole.manager;
 
     return Scaffold(
       appBar: const SushiNavBar(),
@@ -48,7 +52,7 @@ class TableSelectionScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'Mở phiên dùng bữa cho bàn trống. Bàn đang bận sẽ khóa thao tác.',
+                        'Mở phiên cho bàn trống hoặc tiếp tục phiên của bàn đang phục vụ.',
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -61,7 +65,7 @@ class TableSelectionScreen extends ConsumerWidget {
                   itemCount: tables.length,
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 280,
-                    mainAxisExtent: 250,
+                    mainAxisExtent: 290,
                     mainAxisSpacing: 18,
                     crossAxisSpacing: 18,
                   ),
@@ -72,8 +76,12 @@ class TableSelectionScreen extends ConsumerWidget {
                       onStartSession: table.status == TableStatus.available
                           ? () => _startSession(context, ref, table)
                           : null,
-                      onCloseSession: table.activeSessionId != null
-                          ? () => _closeSession(context, ref, table)
+                      onResumeSession: table.activeSessionId != null
+                          ? () => _resumeSession(context, ref, table)
+                          : null,
+                      onCancelSession:
+                          isManager && table.activeSessionId != null
+                          ? () => _cancelSession(context, ref, table)
                           : null,
                     );
                   },
@@ -122,57 +130,81 @@ class TableSelectionScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _closeSession(
+  Future<void> _resumeSession(
+    BuildContext context,
+    WidgetRef ref,
+    TableInfo table,
+  ) async {
+    try {
+      final session = await ref
+          .read(tableSelectionViewModelProvider.notifier)
+          .resumeSession(table);
+
+      if (!context.mounted) return;
+      ref.read(currentDiningSessionProvider.notifier).setSession(session);
+      await ref
+          .read(deviceSessionAssignmentServiceProvider)
+          .saveActiveSession(session);
+      if (!context.mounted) return;
+
+      GoRouter.of(context).go('/dining/menu');
+    } catch (error) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không thể vào phiên: $error')),
+      );
+    }
+  }
+
+  Future<void> _cancelSession(
     BuildContext context,
     WidgetRef ref,
     TableInfo table,
   ) async {
     final sessionId = table.activeSessionId;
+    if (sessionId == null) return;
 
-    if (sessionId == null) {
-      return;
-    }
-
-    // P3-12: Check if there are any unsynced pending orders for this session
     final pendingRepo = ref.read(localPendingOrderRepositoryProvider);
     final localOrders = await pendingRepo.getOrders(sessionId: sessionId);
     final hasUnsynced = localOrders.any(
-      (o) => o.status == SyncStatus.localOnly || o.status == SyncStatus.failed,
+      (order) =>
+          order.status == SyncStatus.localOnly ||
+          order.status == SyncStatus.failed,
     );
-
     if (!context.mounted) return;
 
-    final confirmed = await _confirmCloseSession(
+    final confirmed = await _confirmCancelSession(
       context,
       table,
       hasUnsynced: hasUnsynced,
     );
-    if (!context.mounted) return;
-
-    if (!confirmed) {
-      return;
-    }
+    if (!context.mounted || !confirmed) return;
 
     try {
       await ref
           .read(tableSelectionViewModelProvider.notifier)
-          .closeSession(sessionId);
+          .cancelSession(sessionId);
 
-      if (!context.mounted) return;
-      ref.read(currentDiningSessionProvider.notifier).clear();
-      await ref
-          .read(deviceSessionAssignmentServiceProvider)
-          .clearActiveSession();
+      final currentSession = ref.read(currentDiningSessionProvider);
+      if (currentSession?.id == sessionId) {
+        await ref
+            .read(diningCartViewModelProvider(sessionId).notifier)
+            .clearCart();
+        await ref
+            .read(deviceSessionAssignmentServiceProvider)
+            .clearActiveSession();
+        ref.read(currentDiningSessionProvider.notifier).clear();
+      }
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã kết thúc phiên của ${table.name}.')),
+        SnackBar(content: Text('Đã hủy phiên của ${table.name}.')),
       );
     } catch (error) {
       if (!context.mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Không thể kết thúc phiên: $error')),
+        SnackBar(content: Text('Không thể hủy phiên: $error')),
       );
     }
   }
@@ -243,7 +275,7 @@ class TableSelectionScreen extends ConsumerWidget {
     return result;
   }
 
-  Future<bool> _confirmCloseSession(
+  Future<bool> _confirmCancelSession(
     BuildContext context,
     TableInfo table, {
     required bool hasUnsynced,
@@ -252,7 +284,7 @@ class TableSelectionScreen extends ConsumerWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Kết thúc phiên ${table.name}?'),
+          title: Text('Hủy phiên ${table.name}?'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,7 +304,7 @@ class TableSelectionScreen extends ConsumerWidget {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'CẢNH BÁO: Bàn này hiện đang có đơn đặt món chưa đồng bộ lên hệ thống do mất kết nối. Nếu đóng phiên, các đơn hàng này có thể sẽ bị mất vĩnh viễn!',
+                          'CẢNH BÁO: Bàn này có đơn chưa đồng bộ. Nếu hủy phiên, các đơn này có thể bị mất vĩnh viễn.',
                           style: TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,
@@ -284,7 +316,9 @@ class TableSelectionScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-              const Text('Sau khi kết thúc, bàn sẽ mở lại cho phiên mới.'),
+              const Text(
+                'Phiên sẽ được đánh dấu đã hủy và bàn sẽ mở lại. Thao tác này chỉ dành cho phiên mở nhầm hoặc bị bỏ dở.',
+              ),
             ],
           ),
           actions: [
@@ -297,7 +331,7 @@ class TableSelectionScreen extends ConsumerWidget {
                   ? FilledButton.styleFrom(backgroundColor: Colors.red)
                   : null,
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Xác nhận kết thúc'),
+              child: const Text('Xác nhận hủy phiên'),
             ),
           ],
         );
@@ -312,12 +346,14 @@ class _TableCard extends StatelessWidget {
   const _TableCard({
     required this.table,
     required this.onStartSession,
-    required this.onCloseSession,
+    required this.onResumeSession,
+    required this.onCancelSession,
   });
 
   final TableInfo table;
   final VoidCallback? onStartSession;
-  final VoidCallback? onCloseSession;
+  final VoidCallback? onResumeSession;
+  final VoidCallback? onCancelSession;
 
   @override
   Widget build(BuildContext context) {
@@ -358,8 +394,21 @@ class _TableCard extends StatelessWidget {
           const Spacer(),
           if (available)
             PrimaryButton(label: 'Mở phiên', onPressed: onStartSession)
-          else if (occupied && table.activeSessionId != null)
-            PrimaryButton(label: 'Đóng phiên', onPressed: onCloseSession)
+          else if (occupied && table.activeSessionId != null) ...[
+            PrimaryButton(label: 'Vào phiên', onPressed: onResumeSession),
+            if (onCancelSession != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onCancelSession,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.vermilion,
+                  side: const BorderSide(color: AppTheme.vermilion),
+                ),
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Hủy phiên'),
+              ),
+            ],
+          ]
           else
             PrimaryButton(label: 'Không khả dụng', onPressed: null),
         ],

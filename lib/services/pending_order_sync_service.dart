@@ -16,6 +16,7 @@ class PendingOrderSyncService {
 
   final Ref ref;
   Timer? _syncTimer;
+  bool _isSyncing = false;
 
   void startPeriodicSync() {
     _syncTimer?.cancel();
@@ -32,11 +33,12 @@ class PendingOrderSyncService {
   Future<bool> hasInternet() async {
     if (kIsWeb) {
       // On web we check using a simple fetch/ping or assume online
-      return true; 
+      return true;
     }
     try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 3));
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 3));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (_) {
       return false;
@@ -44,9 +46,27 @@ class PendingOrderSyncService {
   }
 
   Future<void> syncPendingOrders() async {
+    if (_isSyncing) return;
+    _isSyncing = true;
+
+    try {
+      await _syncPendingOrders();
+    } finally {
+      _isSyncing = false;
+    }
+  }
+
+  Future<void> _syncPendingOrders() async {
     final localRepo = ref.read(localPendingOrderRepositoryProvider);
     final orders = await localRepo.getOrders();
-    final pendingOrders = orders.where((o) => o.status == SyncStatus.localOnly || o.status == SyncStatus.failed).toList();
+    final pendingOrders = orders
+        .where(
+          (o) =>
+              o.status == SyncStatus.localOnly ||
+              o.status == SyncStatus.syncing ||
+              o.status == SyncStatus.failed,
+        )
+        .toList();
 
     if (pendingOrders.isEmpty) return;
 
@@ -63,40 +83,46 @@ class PendingOrderSyncService {
           status: SyncStatus.syncing.name,
         );
 
-        final orderItems = order.items.map((item) => OrderItem(
-          productId: item.productId,
-          productName: item.name,
-          unitPrice: item.unitPrice,
-          quantity: item.quantity,
-          note: item.note,
-          lineTotal: item.lineTotal,
-        )).toList();
-
-        final subtotal = orderItems.fold<double>(0, (total, item) => total + item.lineTotal);
+        final orderItems = order.items
+            .map(
+              (item) => OrderItem(
+                productId: item.productId,
+                productName: item.name,
+                unitPrice: item.unitPrice,
+                quantity: item.quantity,
+                note: item.note,
+                lineTotal: item.lineTotal,
+              ),
+            )
+            .toList();
 
         // Upload to Firestore
-        final docRef = await firestoreService.createOrder({
-          'source': OrderSource.tableDevice.name,
-          'orderType': OrderType.dineIn.name,
-          'sessionId': order.sessionId,
-          'tableId': order.tableId,
-          'items': orderItems.map((item) => {
-            'productId': item.productId,
-            'productName': item.productName,
-            'unitPrice': item.unitPrice,
-            'quantity': item.quantity,
-            'note': item.note,
-            'lineTotal': item.lineTotal,
-          }).toList(),
-          'subtotal': subtotal,
-          'deliveryFee': 0,
-          'discount': 0,
-          'grandTotal': subtotal,
-          'status': DineInOrderStatus.pending.name,
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-          'idempotencyKey': order.idempotencyKey,
-        });
+        final docRef = await firestoreService.createDineInOrder(
+          idempotencyKey: order.idempotencyKey,
+          sessionId: order.sessionId,
+          tableId: order.tableId,
+          data: {
+            'source': OrderSource.tableDevice.name,
+            'orderType': OrderType.dineIn.name,
+            'items': orderItems
+                .map(
+                  (item) => {
+                    'productId': item.productId,
+                    'productName': item.productName,
+                    'unitPrice': item.unitPrice,
+                    'quantity': item.quantity,
+                    'note': item.note,
+                    'lineTotal': item.lineTotal,
+                  },
+                )
+                .toList(),
+            'deliveryFee': 0,
+            'discount': 0,
+            'status': DineInOrderStatus.pending.name,
+            'createdAt': Timestamp.fromDate(order.createdAt),
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+        );
 
         // Update local status to synced
         await localRepo.updateStatus(

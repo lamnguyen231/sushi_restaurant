@@ -11,7 +11,6 @@ import '../viewmodels/dining_cart_view_model.dart';
 import '../widgets/empty_state_view.dart';
 import '../widgets/error_view.dart';
 import '../widgets/loading_view.dart';
-import '../widgets/primary_button.dart';
 import '../widgets/staff_session_unlock_button.dart';
 
 class SessionOrdersScreen extends ConsumerWidget {
@@ -149,67 +148,6 @@ class SessionOrdersScreen extends ConsumerWidget {
                   ),
                 ),
 
-                // Thanh điều khiển phía dưới
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.paper,
-                    border: Border(top: BorderSide(color: AppTheme.rice)),
-                  ),
-                  child: SafeArea(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.notifications_active_outlined),
-                            label: const Text('GỌI NHÂN VIÊN'),
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Đang gọi nhân viên hỗ trợ...')),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: PrimaryButton(
-                            label: 'YÊU CẦU THANH TOÁN',
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Yêu cầu thanh toán'),
-                                  content: Text(
-                                    'Tổng hóa đơn của quý khách là ${formatCurrency.format(sessionTotal)}.\nNhân viên sẽ mang hóa đơn và thiết bị thanh toán tới bàn trong giây lát.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('ĐÓNG'),
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppTheme.vermilion,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Đã gửi yêu cầu thanh toán xuống quầy thu ngân!')),
-                                        );
-                                      },
-                                      child: const Text('XÁC NHẬN'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ],
             );
           },

@@ -8,6 +8,7 @@ import '../core/providers/firebase_providers.dart';
 import '../core/theme/app_theme.dart';
 import '../models/cart_item.dart';
 import '../models/dining_session.dart';
+import '../repositories/order_repository.dart';
 import '../viewmodels/dining_cart_view_model.dart';
 import '../widgets/empty_state_view.dart';
 import '../widgets/error_view.dart';
@@ -136,6 +137,14 @@ class DiningCartScreen extends ConsumerWidget {
         context,
       ).showSnackBar(const SnackBar(content: Text('Đã gửi order xuống bếp!')));
       context.go('/dining/orders');
+    } on OrderQueuedOfflineException catch (error) {
+      await ref
+          .read(diningCartViewModelProvider(session.id).notifier)
+          .clearCart();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(

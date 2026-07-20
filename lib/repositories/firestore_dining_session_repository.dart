@@ -12,27 +12,21 @@ class FirestoreDiningSessionRepository implements DiningSessionRepository {
   Future<DiningSession> startSession({
     required String tableId,
     required String openedBy,
+    required String openedByName,
+    required String deviceId,
     required int guestCount,
   }) async {
-    final sessionRef = await _sessionService.createSession(
+    final snapshot = await _sessionService.createSession(
       tableId: tableId,
       openedBy: openedBy,
+      openedByName: openedByName,
+      deviceId: deviceId,
       guestCount: guestCount,
     );
-    return DiningSession(
-      id: sessionRef.id,
-      tableId: tableId,
-      tableName: tableId,
-      status: DiningSessionStatus.active,
-      guestCount: guestCount,
-      openedBy: openedBy,
-      startedAt: DateTime.now(),
-      paymentStatus: PaymentStatus.unpaid,
-      subtotal: 0,
-      discount: 0,
-      serviceCharge: 0,
-      tax: 0,
-      grandTotal: 0,
+    return DiningSession.fromFirestoreData(
+      id: snapshot.id,
+      data: snapshot.data() ?? const <String, dynamic>{},
+      fallbackTableId: tableId,
     );
   }
 
@@ -42,25 +36,40 @@ class FirestoreDiningSessionRepository implements DiningSessionRepository {
   }
 
   @override
+  Future<void> cancelSession({
+    required String sessionId,
+    required String cancelledBy,
+  }) {
+    return _sessionService.cancelSession(
+      sessionId: sessionId,
+      cancelledBy: cancelledBy,
+    );
+  }
+
+  @override
+  Future<void> setPaymentStatus({
+    required String sessionId,
+    required PaymentStatus status,
+    DiningPaymentMethod? method,
+    String? paidBy,
+  }) {
+    return _sessionService.setPaymentStatus(
+      sessionId: sessionId,
+      status: status.name,
+      paymentMethod: method?.name,
+      paidBy: paidBy,
+    );
+  }
+
+  @override
   Stream<DiningSession?> watchActiveSession(String tableId) {
     return _sessionService.watchActiveSession(tableId).map((snapshot) {
       if (snapshot.docs.isEmpty) return null;
       final doc = snapshot.docs.first;
-      final data = doc.data();
-      return DiningSession(
+      return DiningSession.fromFirestoreData(
         id: doc.id,
-        tableId: data['tableId'] as String? ?? tableId,
-        tableName: data['tableName'] as String? ?? tableId,
-        status: DiningSessionStatus.active,
-        guestCount: data['guestCount'] as int?,
-        openedBy: data['openedBy'] as String? ?? '',
-        startedAt: DateTime.now(),
-        paymentStatus: PaymentStatus.unpaid,
-        subtotal: (data['subtotal'] as num? ?? 0).toDouble(),
-        discount: (data['discount'] as num? ?? 0).toDouble(),
-        serviceCharge: (data['serviceCharge'] as num? ?? 0).toDouble(),
-        tax: (data['tax'] as num? ?? 0).toDouble(),
-        grandTotal: (data['grandTotal'] as num? ?? 0).toDouble(),
+        data: doc.data(),
+        fallbackTableId: tableId,
       );
     });
   }

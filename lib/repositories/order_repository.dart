@@ -2,6 +2,16 @@ import '../models/cart_item.dart';
 import '../models/order_item.dart';
 import '../models/restaurant_order.dart';
 
+class OrderQueuedOfflineException implements Exception {
+  const OrderQueuedOfflineException();
+
+  String get message =>
+      'Mạng yếu. Đơn hàng đã được lưu và sẽ tự động gửi khi có mạng!';
+
+  @override
+  String toString() => message;
+}
+
 abstract interface class OrderRepository {
   Stream<List<RestaurantOrder>> watchKitchenOrders();
 
