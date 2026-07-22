@@ -251,6 +251,7 @@ List<_RoleAction> _roleActionFor(AppUser user) {
     UserRole.manager => const [
         _RoleAction('DASHBOARD', '/manager/dashboard'),
         _RoleAction('TABLES LIST', '/staff/tables'),
+        _RoleAction('TABLE MGMT', '/admin/tables'),
         _RoleAction('MENU MGMT', '/admin/menu'),
       ],
     UserRole.staff => const [_RoleAction('TABLES LIST', '/staff/tables')],

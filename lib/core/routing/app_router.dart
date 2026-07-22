@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../views/about_screen.dart';
 import '../../views/admin_menu_screen.dart';
+import '../../views/admin_table_screen.dart';
 import '../../views/dining_cart_screen.dart';
 import '../../views/dining_menu_screen.dart';
 import '../../views/info_screen.dart';
@@ -83,6 +84,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/menu',
         builder: (context, state) => const AdminMenuScreen(),
+      ),
+      GoRoute(
+        path: '/admin/tables',
+        builder: (context, state) => const AdminTableScreen(),
       ),
       // ── Manager routes ──────────────────────────────────────────────────
       GoRoute(

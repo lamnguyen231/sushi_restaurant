@@ -199,6 +199,14 @@ class ManagerDashboardScreen extends ConsumerWidget {
               children: [
                 _buildActionCard(
                   context,
+                  title: 'Quản lý bàn',
+                  subtitle: 'Thêm, sửa, xóa bàn ăn. Lọc theo trạng thái và tìm kiếm nhanh.',
+                  icon: Icons.table_bar,
+                  route: '/admin/tables',
+                  gradient: const [Color(0xFFEC4899), Color(0xFFBE185D)], // Pink
+                ),
+                _buildActionCard(
+                  context,
                   title: 'Quản lý đơn hàng',
                   subtitle: 'Theo dõi, tìm kiếm và điều chỉnh toàn bộ đơn hàng trong hệ thống.',
                   icon: Icons.receipt_long,

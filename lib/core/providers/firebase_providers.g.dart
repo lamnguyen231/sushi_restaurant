@@ -839,8 +839,7 @@ String _$notificationRepositoryHash() =>
 const initializeNotificationsProvider = InitializeNotificationsProvider._();
 
 final class InitializeNotificationsProvider
-    extends
-        $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
+    extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
     with $FutureModifier<void>, $FutureProvider<void> {
   const InitializeNotificationsProvider._()
     : super(
@@ -867,7 +866,8 @@ final class InitializeNotificationsProvider
   }
 }
 
-String _$initializeNotificationsHash() => r'dummyhashnotifications';
+String _$initializeNotificationsHash() =>
+    r'bec14c43a370ed88ee62d459ddf7e3859ea6b82f';
 
 @ProviderFor(allOrders)
 const allOrdersProvider = AllOrdersProvider._();
@@ -879,7 +879,9 @@ final class AllOrdersProvider
           List<RestaurantOrder>,
           Stream<List<RestaurantOrder>>
         >
-    with $FutureModifier<List<RestaurantOrder>>, $StreamProvider<List<RestaurantOrder>> {
+    with
+        $FutureModifier<List<RestaurantOrder>>,
+        $StreamProvider<List<RestaurantOrder>> {
   const AllOrdersProvider._()
     : super(
         from: null,
@@ -896,8 +898,9 @@ final class AllOrdersProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<RestaurantOrder>> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $StreamProviderElement<List<RestaurantOrder>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
 
   @override
   Stream<List<RestaurantOrder>> create(Ref ref) {
@@ -905,7 +908,7 @@ final class AllOrdersProvider
   }
 }
 
-String _$allOrdersHash() => r'dummyhashallorders';
+String _$allOrdersHash() => r'b97cbacf491361e06c5ea984e9552a1d7ea61612';
 
 @ProviderFor(reservationsStream)
 const reservationsStreamProvider = ReservationsStreamProvider._();
@@ -917,7 +920,9 @@ final class ReservationsStreamProvider
           List<Reservation>,
           Stream<List<Reservation>>
         >
-    with $FutureModifier<List<Reservation>>, $StreamProvider<List<Reservation>> {
+    with
+        $FutureModifier<List<Reservation>>,
+        $StreamProvider<List<Reservation>> {
   const ReservationsStreamProvider._()
     : super(
         from: null,
@@ -934,8 +939,9 @@ final class ReservationsStreamProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<Reservation>> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $StreamProviderElement<List<Reservation>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
 
   @override
   Stream<List<Reservation>> create(Ref ref) {
@@ -943,7 +949,5 @@ final class ReservationsStreamProvider
   }
 }
 
-String _$reservationsStreamHash() => r'dummyhashreservationsstream';
-
-
-
+String _$reservationsStreamHash() =>
+    r'080426a7c95fb8bf7477b8fa981b83213d1fb9ed';
