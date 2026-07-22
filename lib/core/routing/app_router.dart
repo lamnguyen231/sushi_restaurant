@@ -17,12 +17,14 @@ import '../../views/session_receipt_screen.dart';
 import '../../views/table_selection_screen.dart';
 import '../../views/web_cart_screen.dart';
 import '../../views/web_home_screen.dart';
+import '../../views/reservation_management_screen.dart';
 import '../../views/web_menu_screen.dart';
 import '../../views/manager_dashboard_screen.dart';
 import '../../views/manager_orders_screen.dart';
 import '../../views/revenue_analytics_screen.dart';
 import '../../views/reports_export_screen.dart';
 import '../../views/profit_analytics_screen.dart';
+
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -77,6 +79,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/web/reservation',
         builder: (context, state) => const ReservationScreen(),
+      ),
+      GoRoute(
+        path: '/staff/reservations',
+        builder: (context, state) => const ReservationManagementScreen(),
       ),
       // ── Admin routes ────────────────────────────────────────────────────
       GoRoute(
