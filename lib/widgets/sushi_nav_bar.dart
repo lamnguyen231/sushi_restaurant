@@ -7,6 +7,7 @@ import '../core/providers/firebase_providers.dart';
 import '../core/theme/app_theme.dart';
 import '../models/app_user.dart';
 import '../viewmodels/web_cart_view_model.dart';
+import '../viewmodels/reservation_management_view_model.dart';
 import 'ink_frame.dart';
 
 class SushiNavBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -198,7 +199,45 @@ class _UserMenu extends ConsumerWidget {
           for (final a in compactActions)
             PopupMenuItem(
               value: a.path,
-              child: Text(a.label),
+              child: a.label == 'RESERVATIONS'
+                  ? Consumer(
+                      builder: (context, ref, _) {
+                        final reservationsAsync =
+                            ref.watch(reservationManagementViewModelProvider);
+                        final pendingCount = reservationsAsync.maybeWhen(
+                          data: (list) => list
+                              .where((r) => r.status == ReservationStatus.pending)
+                              .length,
+                          orElse: () => 0,
+                        );
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(a.label),
+                            if (pendingCount > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.vermilion,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '$pendingCount',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    )
+                  : Text(a.label),
             ),
           const PopupMenuDivider(),
         ],
@@ -228,14 +267,14 @@ class _UserMenu extends ConsumerWidget {
   }
 }
 
-class _RoleActionButton extends StatelessWidget {
+class _RoleActionButton extends ConsumerWidget {
   const _RoleActionButton({required this.action});
 
   final _RoleAction action;
 
   @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
+  Widget build(BuildContext context, WidgetRef ref) {
+    Widget button = OutlinedButton(
       onPressed: () => context.go(action.path),
       style: OutlinedButton.styleFrom(
         foregroundColor: AppTheme.paper,
@@ -243,6 +282,30 @@ class _RoleActionButton extends StatelessWidget {
       ),
       child: Text(action.label),
     );
+
+    if (action.label == 'RESERVATIONS') {
+      final reservationsAsync =
+          ref.watch(reservationManagementViewModelProvider);
+      final pendingCount = reservationsAsync.maybeWhen(
+        data: (list) =>
+            list.where((r) => r.status == ReservationStatus.pending).length,
+        orElse: () => 0,
+      );
+
+      if (pendingCount > 0) {
+        return Badge(
+          label: Text(
+            '$pendingCount',
+            style: const TextStyle(fontSize: 9, color: Colors.white),
+          ),
+          backgroundColor: AppTheme.vermilion,
+          offset: const Offset(-2, 2),
+          child: button,
+        );
+      }
+    }
+
+    return button;
   }
 }
 
@@ -251,9 +314,13 @@ List<_RoleAction> _roleActionFor(AppUser user) {
     UserRole.manager => const [
         _RoleAction('DASHBOARD', '/staff/tables'),
         _RoleAction('TABLES LIST', '/staff/tables'),
+        _RoleAction('RESERVATIONS', '/staff/reservations'),
         _RoleAction('MENU MGMT', '/admin/menu'),
       ],
-    UserRole.staff => const [_RoleAction('TABLES LIST', '/staff/tables')],
+    UserRole.staff => const [
+        _RoleAction('TABLES LIST', '/staff/tables'),
+        _RoleAction('RESERVATIONS', '/staff/reservations'),
+      ],
     UserRole.kitchen => const [_RoleAction('KITCHEN', '/kitchen/orders')],
     UserRole.customer => const [],
   };

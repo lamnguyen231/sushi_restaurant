@@ -1,3 +1,4 @@
+import '../core/enums/app_enums.dart';
 import '../models/reservation.dart';
 import '../services/firestore_reservation_service.dart';
 import 'reservation_repository.dart';
@@ -23,7 +24,27 @@ class FirestoreReservationRepository implements ReservationRepository {
 
   @override
   Stream<List<Reservation>> watchReservations() {
-    // TODO: Add Firestore reservation listener when manager screen is implemented.
-    return const Stream.empty();
+    return _reservationService.watchReservations().map(
+      (snapshot) => snapshot.docs
+          .map((doc) => Reservation.fromFirestore(doc.id, doc.data()))
+          .toList(),
+    );
+  }
+
+  @override
+  Future<void> updateReservationStatus(
+    String reservationId,
+    ReservationStatus status,
+  ) {
+    return _reservationService.updateReservationStatus(
+      reservationId,
+      status.name,
+    );
+  }
+
+  @override
+  Future<void> assignTable(String reservationId, String? tableId) {
+    return _reservationService.assignTable(reservationId, tableId);
   }
 }
+
