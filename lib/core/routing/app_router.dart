@@ -8,6 +8,7 @@ import '../../views/dining_menu_screen.dart';
 import '../../views/info_screen.dart';
 import '../../views/kitchen_orders_screen.dart';
 import '../../views/login_screen.dart';
+import '../../views/signup_screen.dart';
 import '../../views/pickup_checkout_screen.dart';
 import '../../views/profile_screen.dart';
 import '../../views/reservation_screen.dart';
@@ -31,6 +32,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
       GoRoute(path: '/info', builder: (context, state) => const InfoScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),

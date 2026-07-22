@@ -34,7 +34,7 @@ final class TableSelectionViewModelProvider
 }
 
 String _$tableSelectionViewModelHash() =>
-    r'1abecdc210c7863e639d521ec8a34ac6f3943c75';
+    r'048fd8cf454245c97fb7efe021bfef4542b4e7cf';
 
 abstract class _$TableSelectionViewModel
     extends $StreamNotifier<List<TableInfo>> {
