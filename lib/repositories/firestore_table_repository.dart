@@ -22,6 +22,43 @@ class FirestoreTableRepository implements TableRepository {
     return _fromDoc(snapshot);
   }
 
+  @override
+  Future<void> addTable({
+    required String name,
+    required int capacity,
+    required String status,
+    String? notes,
+  }) {
+    return _tableService.addTable(
+      name: name,
+      capacity: capacity,
+      status: status,
+      notes: notes,
+    );
+  }
+
+  @override
+  Future<void> updateTable({
+    required String id,
+    required String name,
+    required int capacity,
+    required String status,
+    String? notes,
+  }) {
+    return _tableService.updateTable(
+      id: id,
+      name: name,
+      capacity: capacity,
+      status: status,
+      notes: notes,
+    );
+  }
+
+  @override
+  Future<void> deleteTable(String id) {
+    return _tableService.deleteTable(id);
+  }
+
   TableInfo _fromDoc(dynamic doc) {
     final data = doc.data() as Map<String, dynamic>;
     return TableInfo(
@@ -45,3 +82,4 @@ class FirestoreTableRepository implements TableRepository {
     };
   }
 }
+
