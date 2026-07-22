@@ -15,4 +15,18 @@ class FirebaseAuthService {
   }
 
   Future<void> signOut() => _auth.signOut();
+
+  Future<void> sendPasswordResetEmail({required String email}) {
+    return _auth.sendPasswordResetEmail(email: email);
+  }
+
+  Future<UserCredential> createUser({
+    required String email,
+    required String password,
+  }) {
+    return _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
 }

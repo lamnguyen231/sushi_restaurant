@@ -17,4 +17,15 @@ abstract interface class AuthRepository {
   });
 
   Future<void> signOut();
+
+  Future<AppUser> signUpWithEmailAndPassword({
+    required String email,
+    required String password,
+    String? fullName,
+    String? phoneNumber,
+    String? address,
+    String? cccd,
+  });
+
+  Future<void> sendPasswordResetEmail({required String email});
 }

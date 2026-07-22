@@ -8,6 +8,7 @@ import '../core/theme/app_theme.dart';
 import '../models/cart_item.dart';
 import '../models/dining_session.dart';
 import '../models/order_item.dart';
+import '../repositories/order_repository.dart';
 import '../viewmodels/dining_cart_view_model.dart';
 import 'error_view.dart';
 import 'loading_view.dart';
@@ -15,13 +16,15 @@ import 'primary_button.dart';
 
 class DiningCartSidebar extends ConsumerWidget {
   const DiningCartSidebar({super.key, required this.session});
-  
+
   final DiningSession session;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cartAsync = ref.watch(diningCartViewModelProvider(session.id));
-    final placedOrdersAsync = ref.watch(sessionPlacedOrdersProvider(session.id));
+    final placedOrdersAsync = ref.watch(
+      sessionPlacedOrdersProvider(session.id),
+    );
 
     double placedTotal = 0;
     List<OrderItem> allPlacedItems = [];
@@ -72,11 +75,17 @@ class DiningCartSidebar extends ConsumerWidget {
                 children: [
                   Text(
                     'Hóa đơn bàn',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: () => context.go('/dining/orders'),
-                    icon: const Icon(Icons.receipt_long, size: 18, color: AppTheme.vermilion),
+                    icon: const Icon(
+                      Icons.receipt_long,
+                      size: 18,
+                      color: AppTheme.vermilion,
+                    ),
                     label: const Text(
                       'Lịch sử đơn',
                       style: TextStyle(
@@ -89,12 +98,18 @@ class DiningCartSidebar extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Order ID: #${session.id.substring(0, 6)}', style: const TextStyle(color: Colors.grey)),
-              Text('Table: ${session.tableName}', style: const TextStyle(color: Colors.grey)),
+              Text(
+                'Order ID: #${session.id.substring(0, 6)}',
+                style: const TextStyle(color: Colors.grey),
+              ),
+              Text(
+                'Table: ${session.tableName}',
+                style: const TextStyle(color: Colors.grey),
+              ),
             ],
           ),
         ),
-        
+
         Expanded(
           child: CustomScrollView(
             slivers: [
@@ -102,21 +117,41 @@ class DiningCartSidebar extends ConsumerWidget {
               if (allPlacedItems.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Theme(
-                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                    data: Theme.of(
+                      context,
+                    ).copyWith(dividerColor: Colors.transparent),
                     child: ExpansionTile(
                       initiallyExpanded: false,
                       tilePadding: const EdgeInsets.symmetric(horizontal: 24),
                       title: Row(
                         children: [
-                          const Icon(Icons.receipt_long, color: Colors.grey, size: 20),
+                          const Icon(
+                            Icons.receipt_long,
+                            color: Colors.grey,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
-                          Text('ĐÃ GỬI BẾP (${allPlacedItems.length} món)', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          Text(
+                            'ĐÃ GỬI BẾP (${allPlacedItems.length} món)',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ],
                       ),
-                      children: allPlacedItems.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16, left: 24, right: 24),
-                        child: _PlacedOrderItemCard(item: item),
-                      )).toList(),
+                      children: allPlacedItems
+                          .map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 16,
+                                left: 24,
+                                right: 24,
+                              ),
+                              child: _PlacedOrderItemCard(item: item),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ),
                 ),
@@ -135,77 +170,106 @@ class DiningCartSidebar extends ConsumerWidget {
                   padding: EdgeInsets.fromLTRB(24, 8, 24, 16),
                   child: Row(
                     children: [
-                      Icon(Icons.shopping_cart_outlined, color: AppTheme.vermilion, size: 20),
+                      Icon(
+                        Icons.shopping_cart_outlined,
+                        color: AppTheme.vermilion,
+                        size: 20,
+                      ),
                       SizedBox(width: 8),
-                      Text('MÓN VỪA CHỌN', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.vermilion)),
+                      Text(
+                        'MÓN VỪA CHỌN',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.vermilion,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
 
               cartAsync.when(
-                loading: () => const SliverToBoxAdapter(child: LoadingView(message: '')),
-                error: (error, stack) => SliverToBoxAdapter(child: ErrorView(message: 'Lỗi: $error')),
+                loading: () =>
+                    const SliverToBoxAdapter(child: LoadingView(message: '')),
+                error: (error, stack) => SliverToBoxAdapter(
+                  child: ErrorView(message: 'Lỗi: $error'),
+                ),
                 data: (state) {
                   if (state.items.isEmpty) {
                     return const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.all(24.0),
-                        child: Text('Giỏ hàng trống.\nHãy chọn món bên trái.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                        child: Text(
+                          'Giỏ hàng trống.\nHãy chọn món bên trái.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ),
                     );
                   }
-                  
+
                   return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 24, left: 24, right: 24),
-                          child: _SidebarCartItem(
-                            item: state.items[index],
-                            sessionId: session.id,
-                          ),
-                        );
-                      },
-                      childCount: state.items.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: 24,
+                          left: 24,
+                          right: 24,
+                        ),
+                        child: _SidebarCartItem(
+                          item: state.items[index],
+                          sessionId: session.id,
+                        ),
+                      );
+                    }, childCount: state.items.length),
                   );
                 },
               ),
             ],
           ),
         ),
-        
+
         // --- CHECKOUT BAR ---
         _SidebarCheckoutBar(
           draftQuantity: draftQty,
           totalPrice: grandTotal,
-          onCheckout: draftQty == 0 ? null : () {
-             if (cartAsync.hasValue) {
-               _submitOrder(context, ref, cartAsync.value!, session);
-             }
-          },
+          onCheckout: draftQty == 0
+              ? null
+              : () {
+                  if (cartAsync.hasValue) {
+                    _submitOrder(context, ref, cartAsync.value!, session);
+                  }
+                },
         ),
       ],
     );
   }
 
-  Future<void> _submitOrder(BuildContext context, WidgetRef ref, DiningCartState state, DiningSession session) async {
+  Future<void> _submitOrder(
+    BuildContext context,
+    WidgetRef ref,
+    DiningCartState state,
+    DiningSession session,
+  ) async {
     final repo = ref.read(orderRepositoryProvider);
-    
+
     // P3-01/P3-02: Dùng name, unitPrice, lineTotal đã snapshot vào LocalCartItem
-    final cartItems = state.items.map<CartItem>((i) => CartItem(
-      id: null,
-      sessionId: session.id,
-      productId: i.localItem.productId,
-      name: i.localItem.name,           // snapshot từ SQLite
-      unitPrice: i.localItem.unitPrice, // snapshot từ SQLite
-      quantity: i.localItem.quantity,
-      lineTotal: i.localItem.lineTotal, // tính lại từ getter
-      note: i.localItem.notes,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    )).toList();
+    final cartItems = state.items
+        .map<CartItem>(
+          (i) => CartItem(
+            id: null,
+            sessionId: session.id,
+            productId: i.localItem.productId,
+            name: i.localItem.name, // snapshot từ SQLite
+            unitPrice: i.localItem.unitPrice, // snapshot từ SQLite
+            quantity: i.localItem.quantity,
+            lineTotal: i.localItem.lineTotal, // tính lại từ getter
+            note: i.localItem.notes,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        )
+        .toList();
 
     try {
       await repo.placeDineInOrder(
@@ -214,18 +278,28 @@ class DiningCartSidebar extends ConsumerWidget {
         tableName: session.tableName,
         cartItems: cartItems,
       );
-      
-      await ref.read(diningCartViewModelProvider(session.id).notifier).clearCart();
-      
+
+      await ref
+          .read(diningCartViewModelProvider(session.id).notifier)
+          .clearCart();
+
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đã gửi order xuống bếp thành công!')),
       );
+    } on OrderQueuedOfflineException catch (error) {
+      await ref
+          .read(diningCartViewModelProvider(session.id).notifier)
+          .clearCart();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi gửi order: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi gửi order: $e')));
     }
   }
 }
@@ -248,16 +322,17 @@ class _PlacedOrderItemCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300),
           ),
-          child: const Center(
-            child: Icon(Icons.check, color: Colors.green),
-          ),
+          child: const Center(child: Icon(Icons.check, color: Colors.green)),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                item.productName,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 4),
               Text(
                 formatCurrency.format(item.unitPrice),
@@ -266,8 +341,12 @@ class _PlacedOrderItemCard extends StatelessWidget {
               const SizedBox(height: 4),
               const Text(
                 'Đã gửi bếp',
-                style: TextStyle(color: Colors.green, fontSize: 12, fontStyle: FontStyle.italic),
-              )
+                style: TextStyle(
+                  color: Colors.green,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
             ],
           ),
         ),
@@ -275,7 +354,10 @@ class _PlacedOrderItemCard extends StatelessWidget {
           children: [
             const Text('x', style: TextStyle(color: Colors.grey)),
             const SizedBox(width: 4),
-            Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              '${item.quantity}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ],
         ),
       ],
@@ -314,7 +396,10 @@ class _SidebarCartItem extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                item.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 4),
               Text(
                 formatCurrency.format(item.unitPrice),
@@ -323,7 +408,11 @@ class _SidebarCartItem extends ConsumerWidget {
               if (localItem.notes != null && localItem.notes!.isNotEmpty)
                 Text(
                   localItem.notes!,
-                  style: const TextStyle(color: Colors.grey, fontSize: 11, fontStyle: FontStyle.italic),
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
             ],
           ),
@@ -331,17 +420,30 @@ class _SidebarCartItem extends ConsumerWidget {
         Row(
           children: [
             InkWell(
-              onTap: () => ref.read(diningCartViewModelProvider(sessionId).notifier)
+              onTap: () => ref
+                  .read(diningCartViewModelProvider(sessionId).notifier)
                   .updateQuantity(localItem.productId, qty - 1),
-              child: const Icon(Icons.remove_circle_outline, size: 24, color: Colors.grey),
+              child: const Icon(
+                Icons.remove_circle_outline,
+                size: 24,
+                color: Colors.grey,
+              ),
             ),
             const SizedBox(width: 12),
-            Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              '$qty',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(width: 12),
             InkWell(
-              onTap: () => ref.read(diningCartViewModelProvider(sessionId).notifier)
+              onTap: () => ref
+                  .read(diningCartViewModelProvider(sessionId).notifier)
                   .updateQuantity(localItem.productId, qty + 1),
-              child: const Icon(Icons.add_circle_outline, size: 24, color: AppTheme.vermilion),
+              child: const Icon(
+                Icons.add_circle_outline,
+                size: 24,
+                color: AppTheme.vermilion,
+              ),
             ),
           ],
         ),
@@ -364,7 +466,7 @@ class _SidebarCheckoutBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatCurrency = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -377,10 +479,17 @@ class _SidebarCheckoutBar extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Tổng cộng:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Tổng cộng:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 Text(
                   formatCurrency.format(totalPrice),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.vermilion),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.vermilion,
+                  ),
                 ),
               ],
             ),
@@ -389,7 +498,9 @@ class _SidebarCheckoutBar extends StatelessWidget {
               width: double.infinity,
               height: 48,
               child: PrimaryButton(
-                label: draftQuantity > 0 ? 'Gửi bếp ($draftQuantity)' : 'Chưa có món mới',
+                label: draftQuantity > 0
+                    ? 'Gửi bếp ($draftQuantity)'
+                    : 'Chưa có món mới',
                 onPressed: onCheckout,
               ),
             ),

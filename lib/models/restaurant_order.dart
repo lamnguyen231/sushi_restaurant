@@ -14,6 +14,7 @@ class RestaurantOrder {
     required this.createdAt,
     required this.updatedAt,
     required this.idempotencyKey,
+    this.receivedAt,
     this.sessionId,
     this.tableId,
     this.tableName,
@@ -37,6 +38,7 @@ class RestaurantOrder {
   final DineInOrderStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? receivedAt;
   final String? createdBy;
   final String idempotencyKey;
   final String? customerName;

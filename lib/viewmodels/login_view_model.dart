@@ -36,4 +36,15 @@ class LoginViewModel extends _$LoginViewModel {
     await ref.read(authRepositoryProvider).signOut();
     state = const AsyncData(LoginViewModelState());
   }
+
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(authRepositoryProvider)
+          .sendPasswordResetEmail(email: email.trim());
+
+      return const LoginViewModelState();
+    });
+  }
 }

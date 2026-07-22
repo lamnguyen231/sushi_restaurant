@@ -60,6 +60,52 @@ class FirebaseAuthRepository implements AuthRepository {
     }
   }
 
+  @override
+  Future<AppUser> signUpWithEmailAndPassword({
+    required String email,
+    required String password,
+    String? fullName,
+    String? phoneNumber,
+    String? address,
+    String? cccd,
+  }) async {
+    final credential = await _authService.createUser(
+      email: email,
+      password: password,
+    );
+    final user = credential.user;
+    if (user == null) {
+      throw StateError('Đăng ký Firebase thành công nhưng không có user.');
+    }
+
+    final userData = <String, dynamic>{
+      'email': email,
+      'role': 'customer',
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+    if (fullName != null && fullName.isNotEmpty) {
+      userData['displayName'] = fullName;
+    }
+    if (phoneNumber != null && phoneNumber.isNotEmpty) {
+      userData['phoneNumber'] = phoneNumber;
+    }
+    if (address != null && address.isNotEmpty) {
+      userData['address'] = address;
+    }
+    if (cccd != null && cccd.isNotEmpty) {
+      userData['cccd'] = cccd;
+    }
+
+    await _firestore.collection('users').doc(user.uid).set(userData);
+
+    return _loadAppUser(user.uid, fallbackEmail: user.email ?? email);
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail({required String email}) {
+    return _authService.sendPasswordResetEmail(email: email);
+  }
+
   Future<AppUser> _loadAppUser(
     String uid, {
     required String fallbackEmail,

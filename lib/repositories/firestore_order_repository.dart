@@ -10,32 +10,47 @@ import 'order_repository.dart';
 import 'local_pending_order_repository.dart';
 
 class FirestoreOrderRepository implements OrderRepository {
-  const FirestoreOrderRepository(this._orderService, this._localPendingRepo);
+  FirestoreOrderRepository(this._orderService, this._localPendingRepo);
 
   final FirestoreOrderService _orderService;
   final LocalPendingOrderRepository _localPendingRepo;
+  final Map<String, Future<RestaurantOrder>> _inFlightDineInOrders = {};
 
   @override
   Stream<List<RestaurantOrder>> watchKitchenOrders() {
     return _orderService.watchKitchenOrders().map(
       (snapshot) => snapshot.docs.map(_fromDoc).toList()
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt)),
+        ..sort(
+          (a, b) => (a.receivedAt ?? a.createdAt).compareTo(
+            b.receivedAt ?? b.createdAt,
+          ),
+        ),
     );
   }
 
   @override
   Stream<List<RestaurantOrder>> watchSessionOrders(String sessionId) {
-    return _orderService.watchSessionOrders(sessionId).map(
-      (snapshot) => snapshot.docs.map(_fromDoc).toList()
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt)),
-    );
+    return _orderService
+        .watchSessionOrders(sessionId)
+        .map(
+          (snapshot) => snapshot.docs.map(_fromDoc).toList()
+            ..sort(
+              (a, b) => (a.receivedAt ?? a.createdAt).compareTo(
+                b.receivedAt ?? b.createdAt,
+              ),
+            ),
+        );
   }
 
   @override
   Stream<List<RestaurantOrder>> watchAllOrders() {
     return _orderService.watchAllOrders().map(
       (snapshot) => snapshot.docs.map(_fromDoc).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)), // Newest first
+        ..sort(
+          (a, b) => (b.receivedAt ?? b.createdAt).compareTo(
+            a.receivedAt ?? a.createdAt,
+          ),
+        ),
     );
   }
 
@@ -53,20 +68,48 @@ class FirestoreOrderRepository implements OrderRepository {
     required String tableName,
     required List<CartItem> cartItems,
   }) async {
-    final localId = 'local_${sessionId}_${DateTime.now().microsecondsSinceEpoch}';
-    final idempotencyKey =
-        '${sessionId}_${DateTime.now().microsecondsSinceEpoch}';
+    final existingRequest = _inFlightDineInOrders[sessionId];
+    if (existingRequest != null) return existingRequest;
+
+    final request = _placeDineInOrder(
+      sessionId: sessionId,
+      tableId: tableId,
+      tableName: tableName,
+      cartItems: cartItems,
+    );
+    _inFlightDineInOrders[sessionId] = request;
+
+    try {
+      return await request;
+    } finally {
+      if (identical(_inFlightDineInOrders[sessionId], request)) {
+        _inFlightDineInOrders.remove(sessionId);
+      }
+    }
+  }
+
+  Future<RestaurantOrder> _placeDineInOrder({
+    required String sessionId,
+    required String tableId,
+    required String tableName,
+    required List<CartItem> cartItems,
+  }) async {
     final now = DateTime.now();
+    final uniqueSuffix = now.microsecondsSinceEpoch;
+    final localId = 'local_${sessionId}_$uniqueSuffix';
+    final idempotencyKey = '${sessionId}_$uniqueSuffix';
 
     final orderItems = cartItems
         .map(
           (item) => OrderItem(
             productId: item.productId,
-            productName: item.name,      // snapshot từ local_cart.name
-            unitPrice: item.unitPrice,   // snapshot từ local_cart.unit_price
+            productName: item.name, // snapshot từ local_cart.name
+            unitPrice: item.unitPrice, // snapshot từ local_cart.unit_price
             quantity: item.quantity,
             note: item.note,
-            lineTotal: item.unitPrice * item.quantity, // P3-03: tính lại, không trust client
+            lineTotal:
+                item.unitPrice *
+                item.quantity, // P3-03: tính lại, không trust client
           ),
         )
         .toList();
@@ -77,15 +120,19 @@ class FirestoreOrderRepository implements OrderRepository {
     );
 
     // P3-05: Lưu vào SQLite pending_orders & pending_order_items (CRUD Create)
-    final pendingItems = orderItems.map((item) => PendingOrderItem(
-      orderId: localId,
-      productId: item.productId,
-      name: item.productName,
-      unitPrice: item.unitPrice,
-      quantity: item.quantity,
-      note: item.note,
-      lineTotal: item.lineTotal,
-    )).toList();
+    final pendingItems = orderItems
+        .map(
+          (item) => PendingOrderItem(
+            orderId: localId,
+            productId: item.productId,
+            name: item.productName,
+            unitPrice: item.unitPrice,
+            quantity: item.quantity,
+            note: item.note,
+            lineTotal: item.lineTotal,
+          ),
+        )
+        .toList();
 
     final pendingOrder = PendingOrder(
       localId: localId,
@@ -107,22 +154,21 @@ class FirestoreOrderRepository implements OrderRepository {
         status: SyncStatus.syncing.name,
       );
 
-      final doc = await _orderService.createOrder({
-        'source': OrderSource.tableDevice.name,
-        'orderType': OrderType.dineIn.name,
-        'sessionId': sessionId,
-        'tableId': tableId,
-        'tableName': tableName,
-        'items': orderItems.map(_orderItemToMap).toList(),
-        'subtotal': subtotal,
-        'deliveryFee': 0,
-        'discount': 0,
-        'grandTotal': subtotal, // P3-03: grandTotal = subtotal (no fee for dine-in)
-        'status': DineInOrderStatus.pending.name,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-        'idempotencyKey': idempotencyKey,
-      });
+      final doc = await _orderService.createDineInOrder(
+        idempotencyKey: idempotencyKey,
+        sessionId: sessionId,
+        tableId: tableId,
+        data: {
+          'source': OrderSource.tableDevice.name,
+          'orderType': OrderType.dineIn.name,
+          'items': orderItems.map(_orderItemToMap).toList(),
+          'deliveryFee': 0,
+          'discount': 0,
+          'status': DineInOrderStatus.pending.name,
+          'createdAt': Timestamp.fromDate(now),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+      );
 
       // P3-05: Cập nhật status thành synced (CRUD Update)
       await _localPendingRepo.updateStatus(
@@ -156,7 +202,7 @@ class FirestoreOrderRepository implements OrderRepository {
         lastError: e.toString(),
       );
 
-      throw 'Mạng yếu. Đơn hàng đã được lưu offline và sẽ tự động gửi khi có mạng!';
+      throw const OrderQueuedOfflineException();
     }
   }
 
@@ -226,9 +272,7 @@ class FirestoreOrderRepository implements OrderRepository {
     await _orderService.updateOrderStatus(orderId: orderId, status: status);
   }
 
-  RestaurantOrder _fromDoc(
-    QueryDocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
+  RestaurantOrder _fromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
     final itemsData = data['items'] as List<dynamic>? ?? const [];
     final items = itemsData
